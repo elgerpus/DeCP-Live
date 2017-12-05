@@ -1,0 +1,47 @@
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h2>Result - {{ resultID }}</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s6">
+            <mz-switch-container>
+                <input mz-switch id="mine-all" [off]="'All'" [on]="'Mine'" type="checkbox">
+            </mz-switch-container>
+        </div>
+
+        <div class="col s6">
+            <mz-switch-container class="right">
+                <input mz-switch id="grid-rows" [off]="'Grid'" [on]="'Rows'" type="checkbox">
+            </mz-switch-container>
+        </div>
+    </div>
+
+    <mz-card>
+        <mz-card-title>
+            <div class="row">
+                <div class="col s12">
+                    Select an image
+                </div>
+            </div>
+        </mz-card-title>
+        <mz-card-content>
+            <div class="row scrollable">
+                <div *ngFor="let image of imageIDs" class="col s3" [routerLink]="[1]">
+                    <div class="overlay-container hoverable">
+                        <img src="{{image}}">
+                        <div class="overlay">
+                            <div class="row">
+                                <div class="col s12">
+                                    <span>ID: {{ utilities.getImageID(image) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </mz-card-content>
+    </mz-card>
+</div>

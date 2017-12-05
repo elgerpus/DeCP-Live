@@ -1,0 +1,52 @@
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h2>Results</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12">
+            <mz-switch-container>
+                <input mz-switch id="all-mine" [off]="'All'" [on]="'Mine'" type="checkbox">
+            </mz-switch-container>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12">
+            <table class="responsive-table striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th>Images</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr [routerLink]="['/results/', 1]">
+                        <td>1</td>
+                        <td>Queued</td>
+                        <td>-</td>
+                        <td>7493</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Running</td>
+                        <td>Monday, 04-Dec-17 15:35:54 UTC</td>
+                        <td>53729</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Done</td>
+                        <td>Monday, 04-Dec-17 14:26:05 UTC</td>
+                        <td>36485</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
