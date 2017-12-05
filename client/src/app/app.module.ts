@@ -10,12 +10,18 @@ import { UtilitiesService } from "./utilities.service";
 import { AppComponent } from "./app.component";
 import { HomeComponent } from "./home/home.component";
 import { QueryComponent } from "./query/query.component";
+import { ResultsComponent } from "./results/results.component";
+import { ResultComponent } from "./results/result/result.component";
+import { ResultImageComponent } from "./results/result/result-image/result-image.component";
 
 @NgModule({
     declarations: [
         AppComponent,
         HomeComponent,
-        QueryComponent
+        QueryComponent,
+        ResultsComponent,
+        ResultComponent,
+        ResultImageComponent
     ],
     imports: [
         BrowserModule,
@@ -31,6 +37,18 @@ import { QueryComponent } from "./query/query.component";
             {
                 path: "query",
                 component: QueryComponent
+            },
+            {
+                path: "results",
+                component: ResultsComponent
+            },
+            {
+                path: "results/:resultID",
+                component: ResultComponent
+            },
+            {
+                path: "results/:resultID/:imageID",
+                component: ResultImageComponent
             }
         ])
     ],

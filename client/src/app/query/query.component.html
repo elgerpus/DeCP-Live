@@ -10,7 +10,7 @@
         <mz-card-title>
             <div class="row">
                 <div class="col s6">
-                    Selected images: {{selected.length}}
+                    Selected images: {{ selected.length }}
                 </div>
                 <div class="col s6">
                     <button mz-button class="right indigo lighten-2" [large]="true" [disabled]="!selected.length" (click)="selected.length = 0">
@@ -30,7 +30,7 @@
                         <div class="overlay">
                             <div class="row">
                                 <div class="col s12">
-                                    <span>ID: {{utilities.getImageID(image)}}</span>
+                                    <span>ID: {{ utilities.getImageID(image) }}</span>
                                 </div>
                             </div>
                         </div>
