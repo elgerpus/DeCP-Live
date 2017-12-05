@@ -6,10 +6,12 @@ import { RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 
 import { AppComponent } from "./app.component";
+import { HomeComponent } from "./src/app/home/home.component";
 
 @NgModule({
     declarations: [
-        AppComponent
+        AppComponent,
+        HomeComponent
     ],
     imports: [
         BrowserModule,
@@ -17,11 +19,11 @@ import { AppComponent } from "./app.component";
         MaterializeModule.forRoot(),
         FormsModule,
         RouterModule.forRoot([
-            // {
-            //     path: "",
-            //     pathMatch: "full",
-            //     component: AppComponent
-            // }
+            {
+                path: "",
+                pathMatch: "full",
+                component: HomeComponent
+            }
         ])
     ],
     providers: [],
