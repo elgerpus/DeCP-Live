@@ -1,15 +1,13 @@
+// Material icons and font
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
-
 @import "~typeface-roboto/index.css";
 
 // Colors
 @import "~materialize-css/sass/components/color";
 
 // Overrides
-$primary-color: color("indigo",
-"lighten-2") !default;
-$secondary-color: color("purple",
-"darken-1") !default;
+$primary-color: color("indigo", "lighten-2") !default;
+$secondary-color: color("purple", "darken-1") !default;
 
 // Variables;
 @import "~materialize-css/sass/components/variables";
@@ -48,10 +46,58 @@ $secondary-color: color("purple",
 @import "~materialize-css/sass/components/date_picker/default.date";
 @import "~materialize-css/sass/components/date_picker/default.time";
 
+// Global font
 html,
 body,
 main,
 app-root {
-    height: 100%;
     font-family: "Roboto", sans-serif;
+}
+
+// Sticky footer
+body>app-root {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+// Overlay
+.overlay-container {
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    margin-top: 20px;
+
+    img {
+        vertical-align: top;
+    }
+
+    .overlay {
+        position: absolute;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        color: rgb(255, 255, 255);
+        margin: 0;
+        bottom: 0;
+        left: 0;
+        user-select: none;
+
+        .row {
+            margin: 0.25em;
+        }
+    }
+}
+
+// Helpers
+.full-width {
+    width: 100%;
+}
+
+.scrollable {
+    max-height: 30em;
+    overflow-y: auto;
 }
