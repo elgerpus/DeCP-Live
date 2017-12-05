@@ -5,13 +5,17 @@ import { MaterializeModule } from "ng2-materialize";
 import { RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 
+import { UtilitiesService } from "./utilities.service";
+
 import { AppComponent } from "./app.component";
-import { HomeComponent } from "./src/app/home/home.component";
+import { HomeComponent } from "./home/home.component";
+import { QueryComponent } from "./query/query.component";
 
 @NgModule({
     declarations: [
         AppComponent,
-        HomeComponent
+        HomeComponent,
+        QueryComponent
     ],
     imports: [
         BrowserModule,
@@ -23,10 +27,16 @@ import { HomeComponent } from "./src/app/home/home.component";
                 path: "",
                 pathMatch: "full",
                 component: HomeComponent
+            },
+            {
+                path: "query",
+                component: QueryComponent
             }
         ])
     ],
-    providers: [],
+    providers: [
+        UtilitiesService
+    ],
     bootstrap: [AppComponent]
 })
 export class AppModule { }
