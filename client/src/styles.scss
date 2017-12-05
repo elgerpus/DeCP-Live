@@ -54,12 +54,6 @@ app-root {
     font-family: "Roboto", sans-serif;
 }
 
-// Cap image size
-img {
-    max-width: 100%;
-    max-height: 100%;
-}
-
 // Sticky footer
 body>app-root {
     display: flex;
@@ -76,15 +70,21 @@ main {
     border-radius: 2px;
     cursor: pointer;
     position: relative;
+    margin-top: 20px;
+
+    img {
+        vertical-align: top;
+    }
 
     .overlay {
         position: absolute;
         width: 100%;
         background-color: rgba(0, 0, 0, 0.4);
         color: rgb(255, 255, 255);
-        margin: 0 0 0.4em 0;
+        margin: 0;
         bottom: 0;
         left: 0;
+        user-select: none;
 
         .row {
             margin: 0.25em;
@@ -95,4 +95,9 @@ main {
 // Helpers
 .full-width {
     width: 100%;
+}
+
+.scrollable {
+    max-height: 30em;
+    overflow-y: auto;
 }

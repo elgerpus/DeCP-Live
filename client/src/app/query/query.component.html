@@ -8,13 +8,25 @@
 
     <mz-card>
         <mz-card-title>
-            Select images
+            <div class="row">
+                <div class="col s6">
+                    Selected images: {{selected.length}}
+                </div>
+                <div class="col s6">
+                    <button mz-button class="right indigo lighten-2" [large]="true" [disabled]="!selected.length" (click)="selected.length = 0">
+                        Clear
+                    </button>
+                </div>
+            </div>
         </mz-card-title>
         <mz-card-content>
-            <div class="row">
+            <div class="row scrollable">
                 <div *ngFor="let image of imageIDs" class="col s3">
-                    <div class="overlay-container" (click)="onImage(utilities.getImageID(image))">
-                        <img src="{{image}}" class="hoverable">
+                    <div class="overlay-container hoverable" (click)="onImage(image)">
+                        <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image)">
+                            <i class="material-icons white-text">check</i>
+                        </div>
+                        <img src="{{image}}">
                         <div class="overlay">
                             <div class="row">
                                 <div class="col s12">
@@ -30,7 +42,7 @@
 
     <div class="row">
         <div class="col s12">
-            <button mz-button [large]="'true'" class="full-width" [disabled]="!selected.length">
+            <button mz-button [large]="true" class="full-width" [disabled]="!selected.length" (click)="onSubmit()">
                 Submit
               </button>
         </div>
