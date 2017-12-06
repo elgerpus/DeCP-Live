@@ -10,9 +10,10 @@ import { UtilitiesService } from "../../../utilities.service";
 })
 export class ResultImageComponent implements OnInit {
 
-    resultID: Number;
-    imageID: Number;
-    imageIDs: String[] = [];
+    resultID: number;
+    imageID: number;
+    imageIDs: string[] = [];
+    grid: boolean;
 
     constructor(
         public utilities: UtilitiesService,

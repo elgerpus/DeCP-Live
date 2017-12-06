@@ -10,8 +10,8 @@ import { UtilitiesService } from "../utilities.service";
 })
 export class QueryComponent implements OnInit {
 
-    selected: String[] = [];
-    imageIDs: String[] = [];
+    selected: string[] = [];
+    imageIDs: string[] = [];
 
     constructor(
         public utilities: UtilitiesService,
@@ -51,8 +51,8 @@ export class QueryComponent implements OnInit {
         this.imageIDs.push("/assets/images/parallax3.jpg");
     }
 
-    onImage(image: String) {
-        const imageID = this.utilities.getImageID(image);
+    onImage(image: string) {
+        const imageID = this.utilities.getImageID(image).valueOf();
         const index = this.selected.indexOf(imageID);
 
         if (-1 < index) {
@@ -67,7 +67,7 @@ export class QueryComponent implements OnInit {
         this.toastService.show("Submitted!", 4000);
     }
 
-    isSelected(image: String): Boolean {
-        return this.selected.includes(this.utilities.getImageID(image));
+    isSelected(image: string): boolean {
+        return this.selected.includes(this.utilities.getImageID(image).valueOf());
     }
 }
