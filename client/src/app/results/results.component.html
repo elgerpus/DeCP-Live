@@ -7,46 +7,50 @@
 
     <div class="row">
         <div class="col s12">
-            <mz-switch-container>
-                <input mz-switch id="all-mine" [off]="'All'" [on]="'Mine'" type="checkbox">
-            </mz-switch-container>
+
         </div>
     </div>
 
-    <div class="row">
-        <div class="col s12">
-            <table class="responsive-table striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Status</th>
-                        <th>Timestamp</th>
-                        <th>Images</th>
-                    </tr>
-                </thead>
+    <mz-card>
+        <mz-card-title>
+            <div class="row">
+                <div class="col s12">
+                    <mz-switch-container>
+                        <input mz-switch id="all-mine" [off]="'All'" [on]="'Mine'" type="checkbox">
+                    </mz-switch-container>
+                </div>
+            </div>
+        </mz-card-title>
+        <mz-card-content>
+            <div class="row scrollable">
+                <div class="col s12">
+                    <table class="responsive-table striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Status</th>
+                                <th>Timestamp</th>
+                                <th>Images</th>
+                            </tr>
+                        </thead>
 
-                <tbody>
-                    <tr [routerLink]="['/results/', 1]">
-                        <td>1</td>
-                        <td>Queued</td>
-                        <td>-</td>
-                        <td>7493</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Running</td>
-                        <td>Monday, 04-Dec-17 15:35:54 UTC</td>
-                        <td>53729</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Done</td>
-                        <td>Monday, 04-Dec-17 14:26:05 UTC</td>
-                        <td>36485</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <tbody>
+                            <tr *ngFor="let result of pages[pagination.currentPage-1]" [routerLink]="['/results/', 1]">
+                                <td>{{result.ID}}</td>
+                                <td>{{result.status}}</td>
+                                <td>{{result.timestamp}}</td>
+                                <td>{{result.images}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
+            <div class="row">
+                <div class="col s12 center">
+                    <app-pagination [pagination]="pagination" [pages]="pages" (onPage)="onPage($event)"></app-pagination>
+                </div>
+            </div>
+        </mz-card-content>
+    </mz-card>
 </div>

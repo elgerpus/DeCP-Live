@@ -29,6 +29,7 @@ export class ResultComponent implements OnInit {
 
     ngOnInit() {
         this.resultID = this.route.snapshot.params["resultID"];
+        this.grid = true;
 
         this.pagination = {
             currentPage: 1,

@@ -27,6 +27,7 @@ export class ResultImageComponent implements OnInit {
     ngOnInit() {
         this.resultID = this.route.snapshot.params["resultID"];
         this.imageID = this.route.snapshot.params["imageID"];
+        this.grid = true;
 
         this.pagination = {
             currentPage: 1,
@@ -43,4 +44,7 @@ export class ResultImageComponent implements OnInit {
         this.pages[0].push("/assets/images/long.jpeg");
     }
 
+    onPage(pagination: IPagination) {
+        this.pagination = pagination;
+    }
 }
