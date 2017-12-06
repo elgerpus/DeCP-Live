@@ -10,8 +10,13 @@ import { UtilitiesService } from "../../utilities.service";
 })
 export class ResultComponent implements OnInit {
 
-    resultID: Number;
-    imageIDs: String[] = [];
+    resultID: number;
+    status: number; // 0: Waiting/Queued | 1: Running | 2: Done
+    queueNumber: number;
+    eta: number;
+    averageTime: number;
+    grid: boolean;
+    imageIDs: string[] = [];
 
     constructor(
         public utilities: UtilitiesService,
@@ -21,6 +26,11 @@ export class ResultComponent implements OnInit {
 
     ngOnInit() {
         this.resultID = this.route.snapshot.params["resultID"];
+
+        this.status = 2;
+        this.queueNumber = 2;
+        this.averageTime = 30;
+        this.eta = this.queueNumber * this.averageTime;
 
         this.imageIDs.push("/assets/images/long.jpeg");
         this.imageIDs.push("/assets/images/parallax1.jpg");
@@ -54,7 +64,7 @@ export class ResultComponent implements OnInit {
         this.imageIDs.push("/assets/images/parallax3.jpg");
     }
 
-    onResultImageClick(resultImageID: Number) {
+    onResultImageClick(resultImageID: number) {
         this.router.navigate(["results", this.resultID, resultImageID]);
     }
 }

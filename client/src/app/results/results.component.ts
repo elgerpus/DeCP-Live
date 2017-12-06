@@ -13,7 +13,7 @@ export class ResultsComponent implements OnInit {
     ngOnInit() {
     }
 
-    onResultClick(resultID: String) {
+    onResultClick(resultID: string) {
         this.router.navigate(["results", resultID]);
     }
 }

@@ -25,7 +25,7 @@
         "@angular/router": "^5.0.0",
         "core-js": "^2.4.1",
         "ng2-materialize": "^1.7.2",
-        "rxjs": "5.5.2",
+        "rxjs": "^5.5.4",
         "typeface-roboto": "^0.0.45",
         "zone.js": "^0.8.14"
     },
