@@ -11,7 +11,9 @@ import { UtilitiesService } from "../utilities.service";
 export class QueryComponent implements OnInit {
 
     selected: string[] = [];
-    imageIDs: string[] = [];
+    pages: string[][] = [];
+    numberOfPages: number;
+    currentPage: number;
 
     constructor(
         public utilities: UtilitiesService,
@@ -19,36 +21,50 @@ export class QueryComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.imageIDs.push("/assets/images/long.jpeg");
-        this.imageIDs.push("/assets/images/parallax1.jpg");
-        this.imageIDs.push("/assets/images/parallax2.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
+        this.currentPage = 1;
+
+        this.numberOfPages = 4;
+        console.log(this.pages);
+
+        for (let i = 0; i < this.numberOfPages; i++) {
+            this.pages[i] = [];
+        }
+
+        console.log(this.pages);
+
+        this.pages[0].push("/assets/images/long.jpeg");
+        this.pages[0].push("/assets/images/parallax1.jpg");
+        this.pages[0].push("/assets/images/parallax2.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+
+        this.pages[1].push("/assets/images/parallax1.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
+        this.pages[1].push("/assets/images/parallax2.jpg");
     }
 
     onImage(image: string) {
@@ -65,6 +81,30 @@ export class QueryComponent implements OnInit {
 
     onSubmit() {
         this.toastService.show("Submitted!", 4000);
+    }
+
+    onPageUp() {
+        this.currentPage++;
+
+        if (this.numberOfPages < this.currentPage) {
+            this.currentPage = this.numberOfPages;
+        }
+    }
+
+    onPageDown() {
+        this.currentPage--;
+
+        if (this.currentPage < 1) {
+            this.currentPage = 1;
+        }
+    }
+
+    onFirstPage() {
+        this.currentPage = 1;
+    }
+
+    onLastPage() {
+        this.currentPage = this.numberOfPages;
     }
 
     isSelected(image: string): boolean {
