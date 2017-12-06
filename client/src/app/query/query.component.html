@@ -21,7 +21,7 @@
         </mz-card-title>
         <mz-card-content>
             <div class="row">
-                <div *ngFor="let image of pages[currentPage-1]" class="col s3">
+                <div *ngFor="let image of pages[pagination.currentPage-1]" class="col s3">
                     <div class="overlay-container hoverable" (click)="onImage(image)">
                         <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image)">
                             <i class="material-icons white-text">check</i>
@@ -39,15 +39,7 @@
 
                 <div class="row">
                     <div class="col s12 center">
-                        <ul class="pagination">
-                            <li [ngClass]="{'active': currentPage === 1, 'waves-effect': currentPage !== 1}" (click)="onFirstPage()"><a><i class="material-icons">first_page</i></a></li>
-                            <li [ngClass]="{'active': currentPage === 1, 'waves-effect': currentPage !== 1}" (click)="onPageDown()"><a><i class="material-icons">chevron_left</i></a></li>
-
-                            <li *ngFor="let page of pages; let i = index" [ngClass]="{'active': (currentPage - 1) === i, 'waves-effect': (currentPage - 1) !== i}" (click)="currentPage = i + 1"><a>{{i+1}}</a></li>
-
-                            <li [ngClass]="{'active': currentPage === pages.length, 'waves-effect': currentPage !== pages.length}" (click)="onPageUp()"><a><i class="material-icons">chevron_right</i></a></li>
-                            <li [ngClass]="{'active': currentPage === pages.length, 'waves-effect': currentPage !== pages.length}" (click)="onLastPage()"><a><i class="material-icons">last_page</i></a></li>
-                        </ul>
+                        <app-pagination [pagination]="pagination" [pages]="pages" (onPage)="onPage($event)"></app-pagination>
                     </div>
                 </div>
             </div>

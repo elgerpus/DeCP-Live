@@ -3,6 +3,8 @@ import { MzToastService } from "ng2-materialize";
 
 import { UtilitiesService } from "../utilities.service";
 
+import { IPagination } from "./../interfaces/ipagination";
+
 @Component({
     selector: "app-query",
     templateUrl: "./query.component.html",
@@ -12,8 +14,7 @@ export class QueryComponent implements OnInit {
 
     selected: string[] = [];
     pages: string[][] = [];
-    numberOfPages: number;
-    currentPage: number;
+    pagination: IPagination;
 
     constructor(
         public utilities: UtilitiesService,
@@ -21,16 +22,14 @@ export class QueryComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.currentPage = 1;
+        this.pagination = {
+            currentPage: 1,
+            numberOfPages: 4
+        };
 
-        this.numberOfPages = 4;
-        console.log(this.pages);
-
-        for (let i = 0; i < this.numberOfPages; i++) {
+        for (let i = 0; i < this.pagination.numberOfPages; i++) {
             this.pages[i] = [];
         }
-
-        console.log(this.pages);
 
         this.pages[0].push("/assets/images/long.jpeg");
         this.pages[0].push("/assets/images/parallax1.jpg");
@@ -83,28 +82,8 @@ export class QueryComponent implements OnInit {
         this.toastService.show("Submitted!", 4000);
     }
 
-    onPageUp() {
-        this.currentPage++;
-
-        if (this.numberOfPages < this.currentPage) {
-            this.currentPage = this.numberOfPages;
-        }
-    }
-
-    onPageDown() {
-        this.currentPage--;
-
-        if (this.currentPage < 1) {
-            this.currentPage = 1;
-        }
-    }
-
-    onFirstPage() {
-        this.currentPage = 1;
-    }
-
-    onLastPage() {
-        this.currentPage = this.numberOfPages;
+    onPage(pagination: IPagination) {
+        this.pagination = pagination;
     }
 
     isSelected(image: string): boolean {
