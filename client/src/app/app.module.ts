@@ -13,6 +13,7 @@ import { QueryComponent } from "./query/query.component";
 import { ResultsComponent } from "./results/results.component";
 import { ResultComponent } from "./results/result/result.component";
 import { ResultImageComponent } from "./results/result/result-image/result-image.component";
+import { PaginationComponent } from "./subcomponents/pagination/pagination.component";
 
 @NgModule({
     declarations: [
@@ -21,7 +22,8 @@ import { ResultImageComponent } from "./results/result/result-image/result-image
         QueryComponent,
         ResultsComponent,
         ResultComponent,
-        ResultImageComponent
+        ResultImageComponent,
+        PaginationComponent
     ],
     imports: [
         BrowserModule,

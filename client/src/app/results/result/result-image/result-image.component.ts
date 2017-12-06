@@ -3,6 +3,8 @@ import { Router, ActivatedRoute } from "@angular/router";
 
 import { UtilitiesService } from "../../../utilities.service";
 
+import { IPagination } from "./../../../interfaces/ipagination";
+
 @Component({
     selector: "app-result-image",
     templateUrl: "./result-image.component.html",
@@ -12,8 +14,9 @@ export class ResultImageComponent implements OnInit {
 
     resultID: number;
     imageID: number;
-    imageIDs: string[] = [];
     grid: boolean;
+    pages: string[][] = [];
+    pagination: IPagination;
 
     constructor(
         public utilities: UtilitiesService,
@@ -24,11 +27,24 @@ export class ResultImageComponent implements OnInit {
     ngOnInit() {
         this.resultID = this.route.snapshot.params["resultID"];
         this.imageID = this.route.snapshot.params["imageID"];
+        this.grid = true;
 
-        this.imageIDs.push("/assets/images/parallax2.jpg");
-        this.imageIDs.push("/assets/images/parallax1.jpg");
-        this.imageIDs.push("/assets/images/parallax3.jpg");
-        this.imageIDs.push("/assets/images/long.jpeg");
+        this.pagination = {
+            currentPage: 1,
+            numberOfPages: 4
+        };
+
+        for (let i = 0; i < this.pagination.numberOfPages; i++) {
+            this.pages[i] = [];
+        }
+
+        this.pages[0].push("/assets/images/parallax2.jpg");
+        this.pages[0].push("/assets/images/parallax1.jpg");
+        this.pages[0].push("/assets/images/parallax3.jpg");
+        this.pages[0].push("/assets/images/long.jpeg");
     }
 
+    onPage(pagination: IPagination) {
+        this.pagination = pagination;
+    }
 }

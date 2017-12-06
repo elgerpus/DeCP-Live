@@ -45,8 +45,28 @@
             </div>
         </mz-card-title>
         <mz-card-content>
-            <div class="row scrollable">
-                <div *ngIf="!grid" class="col s12">
+            <div *ngIf="grid" class="row">
+                <div *ngFor="let image of pages[pagination.currentPage-1]" class="col s3">
+                    <div class="overlay-container hoverable">
+                        <img src="{{image}}">
+                        <div class="overlay">
+                            <div class="row">
+                                <div class="col s12">
+                                    <span>Votes: 29</span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col s12">
+                                    <span>ID: {{ utilities.getImageID(image) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="!grid" class="row scrollable">
+                <div class="col s12">
                     <table class="responsive-table striped">
                         <thead>
                             <tr>
@@ -57,7 +77,7 @@
                         </thead>
 
                         <tbody>
-                            <tr *ngFor="let image of imageIDs" [routerLink]="[1]">
+                            <tr *ngFor="let image of pages[pagination.currentPage-1]" [routerLink]="[1]">
                                 <td><img src="{{image}}"></td>
                                 <td>29</td>
                                 <td>{{ utilities.getImageID(image) }}</td>
@@ -65,27 +85,12 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
 
-                <div *ngIf="grid">
-                    <div *ngFor="let image of imageIDs" class="col s3">
-                        <div class="overlay-container hoverable">
-                            <img src="{{image}}">
-                            <div class="overlay">
-                                <div class="row">
-                                    <div class="col s12">
-                                        <span>Votes: 29</span>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col s12">
-                                        <span>ID: {{ utilities.getImageID(image) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col s12 center">
+                    <app-pagination [pagination]="pagination" [pages]="pages" (onPage)="onPage($event)"></app-pagination>
                 </div>
-
             </div>
         </mz-card-content>
     </mz-card>
