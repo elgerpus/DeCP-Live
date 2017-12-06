@@ -1,21 +1,30 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "description": "Socket server",
-  "main": "index.js",
-  "scripts": {
-    "watch": "babel-watch index.js"
-  },
-  "license": "MIT",
-  "private": true,
-  "dependencies": {
-    "express": "^4.16.2",
-    "http": "^0.0.0",
-    "socket.io": "^2.0.4"
-  },
-  "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-watch": "^2.0.7"
-  }
+    "name": "server",
+    "version": "1.0.0",
+    "description": "Socket server",
+    "main": "index.js",
+    "scripts": {
+        "watch": "babel-watch src/index.js",
+        "build": "babel src -d dist",
+        "serve": "node dist/index.js"
+    },
+    "license": "MIT",
+    "private": true,
+    "dependencies": {
+        "babel-cli": "^6.26.0",
+        "express": "^4.16.2",
+        "http": "^0.0.0",
+        "lodash": "^4.17.4",
+        "socket.io": "^2.0.4"
+    },
+    "devDependencies": {
+        "babel-core": "^6.26.0",
+        "babel-preset-env": "^1.6.1",
+        "babel-watch": "^2.0.7"
+    },
+    "babel": {
+        "presets": [
+            "env"
+        ]
+    }
 }
