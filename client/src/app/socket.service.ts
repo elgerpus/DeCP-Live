@@ -13,9 +13,6 @@ export class SocketService {
 
     constructor(private utilities: UtilitiesService) {
         this.socket = io(utilities.SERVER_URL);
-        // this.socket.on("connection", function () {
-        //     console.log("connected");
-        // });
     }
 
     getQueryImages(page: number): Observable<IEnvelope<IImage>> {
@@ -29,6 +26,17 @@ export class SocketService {
                 };
 
                 observer.next(env);
+            });
+        });
+
+        return observable;
+    }
+
+    sendQueryImages(imageIDs: string[]): Observable<boolean> {
+        const observable = new Observable<boolean>(observer => {
+            this.socket.emit("imageQuery", imageIDs);
+            this.socket.on("imageQuery", success => {
+                observer.next(success);
             });
         });
 

@@ -78,7 +78,20 @@ export class QueryComponent implements OnInit {
     }
 
     onSubmit() {
-        this.toastService.show("Submitted!", 4000);
+        this.socketService.sendQueryImages(this.selected).first().subscribe(
+            success => {
+                if (success) {
+                    this.toastService.show("Query succeeded!", 4000);
+                }
+                else {
+                    this.toastService.show("Query failed!", 4000);
+                }
+            },
+            error => {
+                this.toastService.show("Unknown error!", 4000);
+                console.log(error);
+            }
+        );
     }
 
     onPage(pagination: IPagination) {
@@ -93,16 +106,22 @@ export class QueryComponent implements OnInit {
 
     getImages(page: number) {
         this.loaded = false;
-        this.socketService.getQueryImages(page).first().subscribe(envelope => {
-            this.pagination = envelope.pagination;
+        this.socketService.getQueryImages(page).first().subscribe(
+            envelope => {
+                this.pagination = envelope.pagination;
 
-            for (let i = 0; i < this.pagination.numberOfPages; i++) {
-                this.pages[i] = [];
+                for (let i = 0; i < this.pagination.numberOfPages; i++) {
+                    this.pages[i] = [];
+                }
+
+                this.pages[this.pagination.currentPage - 1] = envelope.items;
+
+                this.loaded = true;
+            },
+            error => {
+                this.toastService.show("Unknown error!", 4000);
+                console.log(error);
             }
-
-            this.pages[this.pagination.currentPage - 1] = envelope.items;
-
-            this.loaded = true;
-        });
+        );
     }
 }

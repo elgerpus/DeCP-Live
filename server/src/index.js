@@ -65,6 +65,12 @@ _io.on("connection", (socket) => {
 
     });
 
+    socket.on("imageQuery", (imageIDs) => {
+        console.log("User queried IDs: " + imageIDs);
+        socket.emit("imageQuery", true);
+
+    });
+
     socket.on("disconnect", () => {
         users.splice(users.indexOf(socket), 1);
         console.log("User: " + socket.id + " disconnected!");
