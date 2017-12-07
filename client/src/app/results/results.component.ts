@@ -12,6 +12,7 @@ import { IPagination } from "./../interfaces/ipagination";
 export class ResultsComponent implements OnInit {
 
     pages: IResult[][] = [];
+    pageNumbers: number[];
     pagination: IPagination;
 
     constructor(private router: Router) { }

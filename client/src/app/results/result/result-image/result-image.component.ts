@@ -16,6 +16,7 @@ export class ResultImageComponent implements OnInit {
     imageID: number;
     grid: boolean;
     pages: string[][] = [];
+    pageNumbers: number[];
     pagination: IPagination;
 
     constructor(

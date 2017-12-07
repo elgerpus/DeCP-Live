@@ -4,6 +4,7 @@ import { Injectable } from "@angular/core";
 export class UtilitiesService {
 
     SERVER_URL = "http://localhost:32000/";
+    PAGINATION_OFFSET = 3;
 
     constructor() { }
 
