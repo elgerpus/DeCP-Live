@@ -44,7 +44,7 @@ fs.readdir(__dirname + "/images", (err, dir) => {
 
     _.forEach(dir, (img) => {
         const file = fs.readFileSync(__dirname + "/images/" + img);
-        images.push(new Image(img, new Buffer(file).toString("base64")));
+        images.push(new Image(img, "data:image/jpg;base64, " + new Buffer(file).toString("base64")));
     });
 
     pageCount = Math.ceil(images.length / PAGE_SIZE);
@@ -59,8 +59,10 @@ _io.on("connection", (socket) => {
     console.log("User: " + socket.id + " connected!");
 
     socket.on("getImages", (pageNumber) => {
-        const collection = _.chain(images).drop(parseInt(pageNumber) * PAGE_SIZE).take(PAGE_SIZE).value();
+        console.log("User requested page: " + pageNumber);
+        const collection = _.chain(images).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
         socket.emit("getImages", new Envelope(collection, new Pagination(pageNumber, pageCount)));
+
     });
 
     socket.on("disconnect", () => {

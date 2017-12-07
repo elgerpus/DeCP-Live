@@ -36,10 +36,10 @@
 
                         <tbody>
                             <tr *ngFor="let result of pages[pagination.currentPage-1]" [routerLink]="['/results/', 1]">
-                                <td>{{result.ID}}</td>
-                                <td>{{result.status}}</td>
-                                <td>{{result.timestamp}}</td>
-                                <td>{{result.images}}</td>
+                                <td>{{ result.ID }}</td>
+                                <td>{{ result.status }}</td>
+                                <td>{{ result.timestamp }}</td>
+                                <td>{{ result.images }}</td>
                             </tr>
                         </tbody>
                     </table>
