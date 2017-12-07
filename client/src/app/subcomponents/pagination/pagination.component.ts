@@ -9,17 +9,18 @@ import { IPagination } from "./../../interfaces/ipagination";
 export class PaginationComponent implements OnInit {
 
     @Input() pagination: IPagination;
-    @Input() pages: string[][];
+    @Input() pages: any[][];
     @Output() onPage = new EventEmitter<IPagination>();
 
     constructor() { }
 
     ngOnInit() {
-        console.log(this.pagination);
     }
 
     onPageNum(num: number) {
         this.pagination.currentPage = num;
+
+        this.onPage.emit(this.pagination);
     }
 
     onPageUp() {

@@ -20,17 +20,25 @@
             </div>
         </mz-card-title>
         <mz-card-content>
-            <div class="row">
+
+            <div *ngIf="!loaded" class="row">
+                <div class="col s12 center">
+                    <mz-spinner [color]="'blue'" [size]="'big'">
+                    </mz-spinner>
+                </div>
+            </div>
+
+            <div *ngIf="loaded" class="row">
                 <div *ngFor="let image of pages[pagination.currentPage-1]" class="col s3">
-                    <div class="overlay-container hoverable" (click)="onImage(image)">
-                        <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image)">
+                    <div class="overlay-container hoverable" (click)="onImage(image.imageID)">
+                        <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image.imageID)">
                             <i class="material-icons white-text">check</i>
                         </div>
-                        <img src="{{image}}">
+                        <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
                         <div class="overlay">
                             <div class="row">
                                 <div class="col s12">
-                                    <span>ID: {{ utilities.getImageID(image) }}</span>
+                                    <span>ID: {{ image.imageID }}</span>
                                 </div>
                             </div>
                         </div>

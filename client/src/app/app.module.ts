@@ -5,6 +5,7 @@ import { MaterializeModule } from "ng2-materialize";
 import { RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 
+import { SocketService } from "./socket.service";
 import { UtilitiesService } from "./utilities.service";
 
 import { AppComponent } from "./app.component";
@@ -55,7 +56,8 @@ import { PaginationComponent } from "./subcomponents/pagination/pagination.compo
         ])
     ],
     providers: [
-        UtilitiesService
+        UtilitiesService,
+        SocketService
     ],
     bootstrap: [AppComponent]
 })
