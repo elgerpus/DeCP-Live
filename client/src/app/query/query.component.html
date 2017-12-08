@@ -1,0 +1,64 @@
+<div class="container">
+
+    <div class="row">
+        <div class="col s12">
+            <h2>Query</h2>
+        </div>
+    </div>
+
+    <mz-card>
+        <mz-card-title>
+            <div class="row">
+                <div class="col s6">
+                    Selected images: {{ selected.length }}
+                </div>
+                <div class="col s6">
+                    <button mz-button class="right indigo lighten-2" [large]="true" [disabled]="!selected.length" (click)="selected.length = 0">
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </mz-card-title>
+        <mz-card-content>
+
+            <div *ngIf="!loaded" class="row">
+                <div class="col s12 center">
+                    <mz-spinner [color]="'blue'" [size]="'big'">
+                    </mz-spinner>
+                </div>
+            </div>
+
+            <div *ngIf="loaded" class="row">
+                <div *ngFor="let image of pages[pagination.currentPage-1]" class="col s3">
+                    <div class="overlay-container hoverable" (click)="onImage(image.imageID)">
+                        <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image.imageID)">
+                            <i class="material-icons white-text">check</i>
+                        </div>
+                        <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
+                        <div class="overlay">
+                            <div class="row">
+                                <div class="col s12">
+                                    <span>ID: {{ image.imageID }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 center">
+                        <app-pagination [pagination]="pagination" [pages]="pages" (onPage)="onPage($event)"></app-pagination>
+                    </div>
+                </div>
+            </div>
+        </mz-card-content>
+    </mz-card>
+
+    <div class="row">
+        <div class="col s12">
+            <button mz-button [large]="true" class="full-width" [disabled]="!selected.length" (click)="onSubmit()">
+                Submit
+              </button>
+        </div>
+    </div>
+</div>

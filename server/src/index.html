@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title>Test</title>
+        <style>
+            #messages {
+                max-height: 80vh;
+                min-height: 80vh;
+                border: 2px solid black;
+                overflow: auto;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <button id="getImages">Get images for page:</button>
+        <input id="page" type="number" />
+
+        <div id="images"></div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script>
+            $(() => {
+
+                const socket = io();
+
+                $("#getImages").on("click", () => {
+                    socket.emit("getImages", $("#page").val());
+                });
+
+                socket.on("getImages", (collection) => {
+
+                    $("#images").html("");
+
+                    const images = collection.images;
+                    const pageNumber = collection.pagination.currentPage;
+                    const pageCount = collection.pagination.numberOfPages;
+
+                    $("#images").append("<h3>Page number: " + pageNumber + "</h3>");
+                    $("#images").append("<h3>Page count: " + pageCount + "</h3>");
+
+                    for (let i = 0; i < images.length; i++) {
+                        $("#images").append(
+                            "<div>\n\t<p>" +
+                            images[i].imageID +
+                            "</p>\n\t<img src=\"data:image/jpg;base64, " +
+                            images[i].imageString +
+                            "\" />\n</div>"
+                        );
+                    }
+
+                });
+
+            });
+        </script>
+    </body>
+
+</html>

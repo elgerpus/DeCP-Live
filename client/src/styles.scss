@@ -1,0 +1,103 @@
+// Material icons and font
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@import "~typeface-roboto/index.css";
+
+// Colors
+@import "~materialize-css/sass/components/color";
+
+// Overrides
+$primary-color: color("indigo", "lighten-2") !default;
+$secondary-color: color("brown", "lighten-1") !default;
+
+// Variables;
+@import "~materialize-css/sass/components/variables";
+
+// Reset
+@import "~materialize-css/sass/components/normalize";
+
+// Components
+@import "~materialize-css/sass/components/global";
+@import "~materialize-css/sass/components/badges";
+@import "~materialize-css/sass/components/icons-material-design";
+@import "~materialize-css/sass/components/grid";
+@import "~materialize-css/sass/components/navbar";
+@import "~materialize-css/sass/components/typography";
+@import "~materialize-css/sass/components/transitions";
+@import "~materialize-css/sass/components/cards";
+@import "~materialize-css/sass/components/toast";
+@import "~materialize-css/sass/components/tabs";
+@import "~materialize-css/sass/components/tooltip";
+@import "~materialize-css/sass/components/buttons";
+@import "~materialize-css/sass/components/dropdown";
+@import "~materialize-css/sass/components/waves";
+@import "~materialize-css/sass/components/modal";
+@import "~materialize-css/sass/components/collapsible";
+@import "~materialize-css/sass/components/chips";
+@import "~materialize-css/sass/components/materialbox";
+@import "~materialize-css/sass/components/forms/forms";
+@import "~materialize-css/sass/components/table_of_contents";
+@import "~materialize-css/sass/components/sideNav";
+@import "~materialize-css/sass/components/preloader";
+@import "~materialize-css/sass/components/slider";
+@import "~materialize-css/sass/components/carousel";
+@import "~materialize-css/sass/components/tapTarget";
+@import "~materialize-css/sass/components/pulse";
+@import "~materialize-css/sass/components/date_picker/default";
+@import "~materialize-css/sass/components/date_picker/default.date";
+@import "~materialize-css/sass/components/date_picker/default.time";
+
+// Global font
+html,
+body,
+main,
+app-root {
+    font-family: "Roboto", sans-serif;
+}
+
+// Sticky footer
+body>app-root {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+// Overlay
+.overlay-container {
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 20px;
+
+    img {
+        vertical-align: top;
+    }
+
+    .overlay {
+        position: absolute;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        color: rgb(255, 255, 255);
+        margin: 0;
+        bottom: 0;
+        left: 0;
+        user-select: none;
+
+        .row {
+            margin: 0.25em;
+        }
+    }
+}
+
+// Helpers
+.full-width {
+    width: 100%;
+}
+
+.scrollable {
+    max-height: 30em;
+    overflow-y: auto;
+}
