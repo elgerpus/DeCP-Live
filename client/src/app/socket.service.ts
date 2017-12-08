@@ -37,9 +37,9 @@ export class SocketService {
         return observable;
     }
 
-    sendQueryImages(imageIDs: string[]): Observable<boolean> {
+    sendQueryImages(imageIDs: string[], b: number, k: number): Observable<boolean> {
         const observable = new Observable<boolean>(observer => {
-            this.socket.emit("imageQuery", imageIDs);
+            this.socket.emit("imageQuery", imageIDs, b, k);
             this.socket.on("imageQuery", success => {
                 observer.next(success);
             });

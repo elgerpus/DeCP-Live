@@ -7,7 +7,7 @@
 
 // Overrides
 $primary-color: color("indigo", "lighten-2") !default;
-$secondary-color: color("brown", "lighten-1") !default;
+$secondary-color: color("light-blue", "base") !default;
 
 // Variables;
 @import "~materialize-css/sass/components/variables";
@@ -98,4 +98,14 @@ main {
 .scrollable {
     max-height: 30em;
     overflow-y: auto;
+}
+
+.table-row {
+    display: table;
+    width: 100%;
+
+    .col {
+        display: table-cell;
+        float: none;
+    }
 }

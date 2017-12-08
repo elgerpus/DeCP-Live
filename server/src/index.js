@@ -4,6 +4,7 @@ import io from "socket.io";
 import fs from "fs";
 import _ from "lodash";
 import sharp from "sharp";
+// import uuidv4 from "uuid/v4";
 
 const _app = express();
 const _http = http.Server(_app);
@@ -68,10 +69,10 @@ _io.on("connection", (socket) => {
         // After all images have been converted to a buffer
         Promise.all(promises).then(buffers => {
             for (let i = 0; i < collection.length; i++) {
-                // Split on / to get the file name
-                const split = collection[i].split("/");
+                // Split to send only the relative path
+                const split = collection[i].split(__dirname);
 
-                collection[i] = new Image(split[split.length - 1], "data:image/jpg;base64, " + buffers[i].toString("base64"));
+                collection[i] = new Image(split[1], "data:image/jpg;base64, " + buffers[i].toString("base64"));
             }
 
             // Send to client
@@ -79,10 +80,73 @@ _io.on("connection", (socket) => {
         });
     });
 
-    socket.on("imageQuery", (imageIDs) => {
-        console.log("User queried IDs: " + imageIDs);
-        socket.emit("imageQuery", true);
+    socket.on("imageQuery", (imagePaths, b, k) => {
+        console.log("User queried. b: " + b + " | k: " + k + " | IDs: " + imagePaths);
 
+        // Make sure variables have values
+        if (!b | !k | !imagePaths) {
+            socket.emit("imageQuery", false);
+        }
+
+        // File path to pending batch file
+        const filepath = __dirname + "/pending_batches/" + b + "." + k;
+
+        // Create file if not exists
+        if (!fs.existsSync(filepath)) {
+            fs.openSync(filepath, "w");
+        }
+
+        // Read the pending batch file
+        fs.readFile(filepath, (err, data) => {
+            if (err) {
+                console.log("Couldn't open/create pending batch file: " + filepath);
+                socket.emit("imageQuery", false);
+                return;
+            }
+
+            let contents = data.toString();
+            let n;
+            let paths;
+
+            // Prepend root path to imageIDs
+            for (let i = 0; i < imagePaths.length; i++) {
+                imagePaths[i] = __dirname + imagePaths[i];
+            }
+
+            // File has contents -> Don't add duplicates and update header
+            if (contents.length !== 0) {
+                // Get lines of file and throw away empty lines
+                const arr = contents.split("\n").filter(x => x);
+
+                // Remove the header
+                arr.shift();
+
+                // Combine the query and file contents, no duplicates
+                const pathsArr = _.union(arr, imagePaths);
+
+                n = pathsArr.length;
+                paths = pathsArr.join("\n");
+            }
+            // File is empty -> Add all paths and create header
+            else {
+                n = imagePaths.length;
+                paths = imagePaths.join("\n");
+            }
+
+            // Construct file contents
+            contents = b + ":" + k + ":" + n + ":\n" + paths + "\n";
+
+            // Write contents to the file (overwrite)
+            fs.writeFile(filepath, contents, err => {
+                if (err) {
+                    console.log(err);
+                    socket.emit("imageQuery", false);
+                    return;
+                }
+
+                socket.emit("imageQuery", true);
+            });
+        });
     });
 
     socket.on("disconnect", () => {

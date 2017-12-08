@@ -8,11 +8,21 @@
 
     <mz-card>
         <mz-card-title>
-            <div class="row">
-                <div class="col s6">
-                    Selected images: {{ selected.length }}
+            <div class="table-row row">
+                <div class="col s4">
+                    <p>Selected images: {{ selected.length }}</p>
                 </div>
-                <div class="col s6">
+                <div class="col s2">
+                    <mz-input-container>
+                        <input mz-input [label]="'Value of B'" id="b-input" type="number" [(ngModel)]="b">
+                    </mz-input-container>
+                </div>
+                <div class="col s2">
+                    <mz-input-container>
+                        <input mz-input [label]="'Value of K'" id="b-input" type="number" [(ngModel)]="k">
+                    </mz-input-container>
+                </div>
+                <div class="col s4 valign-wrapper">
                     <button mz-button class="right indigo lighten-2" [large]="true" [disabled]="!selected.length" (click)="selected.length = 0">
                         Clear
                     </button>
@@ -29,7 +39,7 @@
             </div>
 
             <div *ngIf="loaded">
-                <div *ngFor="let imageSet of images; let i = index" class="row">
+                <div *ngFor="let imageSet of images; let i = index" class="table-row row">
                     <div *ngFor="let image of imageSet" class="col s3">
                         <div class="overlay-container hoverable" (click)="onImage(image.imageID)">
                             <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image.imageID)">
@@ -37,9 +47,9 @@
                             </div>
                             <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
                             <div class="overlay">
-                                <div class="row">
+                                <div class="row truncate">
                                     <div class="col s12">
-                                        <span>ID: {{ image.imageID }}</span>
+                                        <span>ID: {{ utilities.getImageID(image.imageID) }}</span>
                                     </div>
                                 </div>
                             </div>

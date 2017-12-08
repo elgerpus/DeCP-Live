@@ -16,6 +16,8 @@ import { IImage } from "../interfaces/iimage";
 export class QueryComponent implements OnInit {
 
     selected: string[] = [];
+    b: number;
+    k: number;
     images: IImage[][];
     pageNumbers: number[];
     pagination: IPagination;
@@ -44,7 +46,7 @@ export class QueryComponent implements OnInit {
     }
 
     onSubmit() {
-        this.socketService.sendQueryImages(this.selected).first().subscribe(
+        this.socketService.sendQueryImages(this.selected, this.b, this.k).first().subscribe(
             success => {
                 if (success) {
                     this.toastService.show("Query succeeded!", 4000);
