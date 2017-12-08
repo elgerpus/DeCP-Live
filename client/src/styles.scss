@@ -69,9 +69,7 @@ main {
 .overlay-container {
     border-radius: 2px;
     cursor: pointer;
-    position: relative;
-    margin-bottom: 20px;
-
+    position: relative; //margin-bottom: 20px;
     img {
         vertical-align: top;
     }
