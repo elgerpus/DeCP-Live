@@ -16,7 +16,7 @@ import { IImage } from "../interfaces/iimage";
 export class QueryComponent implements OnInit {
 
     selected: string[] = [];
-    images: IImage[];
+    images: IImage[][];
     pageNumbers: number[];
     pagination: IPagination;
     loaded = false;
@@ -29,42 +29,7 @@ export class QueryComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-
         this.getImages(1);
-
-        // this.pages[0].push("/assets/images/long.jpeg");
-        // this.pages[0].push("/assets/images/parallax1.jpg");
-        // this.pages[0].push("/assets/images/parallax2.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-
-        // this.pages[1].push("/assets/images/parallax1.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
     }
 
     onImage(imageID: string) {
@@ -110,6 +75,7 @@ export class QueryComponent implements OnInit {
         this.socketService.getQueryImages(page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
+                this.images = [];
                 this.pageNumbers = [];
 
                 let start = this.pagination.currentPage - this.utilities.PAGINATION_OFFSET;
@@ -130,13 +96,23 @@ export class QueryComponent implements OnInit {
                     end = this.pagination.numberOfPages;
                 }
 
-                let j = 0;
-                for (let i = start; i <= end; i++) {
+                for (let i = start, j = 0; i <= end; i++ , j++) {
                     this.pageNumbers[j] = start + j;
-                    j++;
                 }
 
-                this.images = envelope.items;
+                for (let i = 0; i < 4; i++) {
+                    this.images[i] = [];
+
+                    for (let j = 0; j < 4; j++) {
+                        const item = envelope.items[(i * 4) + j];
+
+                        if (item === undefined) {
+                            break;
+                        }
+
+                        this.images[i][j] = item;
+                    }
+                }
 
                 this.loaded = true;
             },

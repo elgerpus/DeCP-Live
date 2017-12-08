@@ -28,17 +28,19 @@
                 </div>
             </div>
 
-            <div *ngIf="loaded" class="row">
-                <div *ngFor="let image of images" class="col s3">
-                    <div class="overlay-container hoverable" (click)="onImage(image.imageID)">
-                        <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image.imageID)">
-                            <i class="material-icons white-text">check</i>
-                        </div>
-                        <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
-                        <div class="overlay">
-                            <div class="row">
-                                <div class="col s12">
-                                    <span>ID: {{ image.imageID }}</span>
+            <div *ngIf="loaded">
+                <div *ngFor="let imageSet of images; let i = index" class="row">
+                    <div *ngFor="let image of imageSet" class="col s3">
+                        <div class="overlay-container hoverable" (click)="onImage(image.imageID)">
+                            <div class="selected-overlay valign-wrapper" *ngIf="isSelected(image.imageID)">
+                                <i class="material-icons white-text">check</i>
+                            </div>
+                            <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
+                            <div class="overlay">
+                                <div class="row">
+                                    <div class="col s12">
+                                        <span>ID: {{ image.imageID }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
