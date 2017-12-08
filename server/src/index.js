@@ -12,6 +12,7 @@ const _io = io(_http);
 
 const PORT = 32000;
 const PAGE_SIZE = 16;
+const ROOT_PATH = `${__dirname}/images`;
 
 class Image {
     constructor(imageID, imageString) {
@@ -37,20 +38,47 @@ class Envelope {
 const users = [];
 const images = [];
 
-fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
-    if (err) {
-        console.log("Couldn't open images!");
-        process.exit(-1);
+const builder = path => {
+    try {
+        const items = fs.readdirSync(`${ROOT_PATH}${path}`);
+
+        for (let i = 0; i < items.length; i++) {
+            builder(`${path}/${items[i]}`);
+        }
     }
-
-    console.log("Adding image paths...");
-
-    for (let i = 0; i < dir.length; i++) {
-        images.push(__dirname + "/images/1holidays/" + dir[i]);
+    catch (err) {
+        if (!path.includes(".DS_Store")) {
+            console.log("Added: " + path);
+            images.push(path);
+        }
     }
+};
 
-    console.log("Image paths added");
-});
+try {
+    const items = fs.readdirSync(ROOT_PATH);
+
+    for (let i = 0; i < items.length; i++) {
+        builder(`/${items[i]}`);
+    }
+}
+catch (err) {
+    console.log(err);
+}
+
+// fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
+//     if (err) {
+//         console.log("Couldn't open images!");
+//         process.exit(-1);
+//     }
+
+//     console.log("Adding image paths...");
+
+//     for (let i = 0; i < dir.length; i++) {
+//         images.push(__dirname + "/images/1holidays/" + dir[i]);
+//     }
+
+//     console.log("Image paths added");
+// });
 
 _io.on("connection", (socket) => {
     users.push(socket);
@@ -63,16 +91,16 @@ _io.on("connection", (socket) => {
         // Resize images and convert to buffer
         const promises = [];
         for (let i = 0; i < collection.length; i++) {
-            promises.push(sharp(collection[i]).resize(300).min().toFormat("jpg").toBuffer());
+            promises.push(sharp(ROOT_PATH + collection[i]).resize(300).min().toFormat("jpg").toBuffer());
         }
 
         // After all images have been converted to a buffer
         Promise.all(promises).then(buffers => {
             for (let i = 0; i < collection.length; i++) {
                 // Split to send only the relative path
-                const split = collection[i].split(__dirname);
+                //const split = collection[i].split(__dirname);
 
-                collection[i] = new Image(split[1], "data:image/jpg;base64, " + buffers[i].toString("base64"));
+                collection[i] = new Image(collection[i], "data:image/jpg;base64, " + buffers[i].toString("base64"));
             }
 
             // Send to client
@@ -86,6 +114,7 @@ _io.on("connection", (socket) => {
         // Make sure variables have values
         if (!b | !k | !imagePaths) {
             socket.emit("imageQuery", false);
+            return;
         }
 
         // File path to pending batch file
@@ -110,7 +139,7 @@ _io.on("connection", (socket) => {
 
             // Prepend root path to imageIDs
             for (let i = 0; i < imagePaths.length; i++) {
-                imagePaths[i] = __dirname + imagePaths[i];
+                imagePaths[i] = ROOT_PATH + imagePaths[i];
             }
 
             // File has contents -> Don't add duplicates and update header
