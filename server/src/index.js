@@ -3,6 +3,7 @@ import http from "http";
 import io from "socket.io";
 import fs from "fs";
 import _ from "lodash";
+import sharp from "sharp";
 
 const _app = express();
 const _http = http.Server(_app);
@@ -34,7 +35,6 @@ class Envelope {
 
 const users = [];
 const images = [];
-let pageCount = 0;
 
 fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
     if (err) {
@@ -42,27 +42,41 @@ fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
         process.exit(-1);
     }
 
-    _.forEach(dir, (img) => {
-        const file = fs.readFileSync(__dirname + "/images/1holidays/" + img);
-        images.push(new Image(img, "data:image/jpg;base64, " + new Buffer(file).toString("base64")));
-    });
+    console.log("Adding image paths...");
 
-    pageCount = Math.ceil(images.length / PAGE_SIZE);
+    for (let i = 0; i < dir.length; i++) {
+        images.push(__dirname + "/images/1holidays/" + dir[i]);
+    }
+
+    console.log("Image paths added");
 });
-
-// _app.get("/", (req, res) => {
-//     res.sendFile(__dirname + "/index.html");
-// });
 
 _io.on("connection", (socket) => {
     users.push(socket);
     console.log("User: " + socket.id + " connected!");
 
     socket.on("getImages", (pageNumber) => {
-        console.log("User requested page: " + pageNumber);
+        // Get the image paths
         const collection = _.chain(images).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
-        socket.emit("getImages", new Envelope(collection, new Pagination(pageNumber, pageCount)));
 
+        // Resize images and convert to buffer
+        const promises = [];
+        for (let i = 0; i < collection.length; i++) {
+            promises.push(sharp(collection[i]).resize(300).min().toFormat("jpg").toBuffer());
+        }
+
+        // After all images have been converted to a buffer
+        Promise.all(promises).then(buffers => {
+            for (let i = 0; i < collection.length; i++) {
+                // Split on / to get the file name
+                const split = collection[i].split("/");
+
+                collection[i] = new Image(split[split.length - 1], "data:image/jpg;base64, " + buffers[i].toString("base64"));
+            }
+
+            // Send to client
+            socket.emit("getImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(images.length / PAGE_SIZE))));
+        });
     });
 
     socket.on("imageQuery", (imageIDs) => {
