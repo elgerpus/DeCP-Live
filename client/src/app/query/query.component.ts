@@ -97,7 +97,7 @@ export class QueryComponent implements OnInit {
 
     onPage(pagination: IPagination) {
         this.pagination = pagination;
-
+        this.socketService.removeListener("getImages");
         this.getImages(this.pagination.currentPage);
     }
 
