@@ -15,11 +15,16 @@ export class SocketService {
         this.socket = io(utilities.SERVER_URL);
     }
 
+    removeListener(event: string) {
+        this.socket.removeListener(event);
+    }
+
     getQueryImages(page: number): Observable<IEnvelope<IImage>> {
         const observable = new Observable<IEnvelope<IImage>>(observer => {
             this.socket.emit("getImages", page);
             this.socket.on("getImages", envelope => {
-
+                console.log("GET IMAGES REPLY:");
+                console.log(envelope);
                 const env: IEnvelope<IImage> = {
                     items: envelope.images,
                     pagination: envelope.pagination

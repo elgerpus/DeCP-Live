@@ -36,14 +36,14 @@ const users = [];
 const images = [];
 let pageCount = 0;
 
-fs.readdir(__dirname + "/images", (err, dir) => {
+fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
     if (err) {
         console.log("Couldn't open images!");
         process.exit(-1);
     }
 
     _.forEach(dir, (img) => {
-        const file = fs.readFileSync(__dirname + "/images/" + img);
+        const file = fs.readFileSync(__dirname + "/images/1holidays/" + img);
         images.push(new Image(img, "data:image/jpg;base64, " + new Buffer(file).toString("base64")));
     });
 

@@ -16,7 +16,8 @@ import { IImage } from "../interfaces/iimage";
 export class QueryComponent implements OnInit {
 
     selected: string[] = [];
-    pages: IImage[][] = [];
+    images: IImage[];
+    pageNumbers: number[];
     pagination: IPagination;
     loaded = false;
 
@@ -96,7 +97,7 @@ export class QueryComponent implements OnInit {
 
     onPage(pagination: IPagination) {
         this.pagination = pagination;
-
+        this.socketService.removeListener("getImages");
         this.getImages(this.pagination.currentPage);
     }
 
@@ -109,12 +110,33 @@ export class QueryComponent implements OnInit {
         this.socketService.getQueryImages(page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
+                this.pageNumbers = [];
 
-                for (let i = 0; i < this.pagination.numberOfPages; i++) {
-                    this.pages[i] = [];
+                let start = this.pagination.currentPage - this.utilities.PAGINATION_OFFSET;
+
+                let diff = 0;
+                if (start < 1) {
+                    diff = Math.abs(start) + 1;
+                    start = 1;
                 }
 
-                this.pages[this.pagination.currentPage - 1] = envelope.items;
+                let end = (start === 1
+                    ? this.pagination.currentPage + this.utilities.PAGINATION_OFFSET + diff
+                    : this.pagination.currentPage + this.utilities.PAGINATION_OFFSET);
+
+                if (this.pagination.numberOfPages < end) {
+                    diff = end - this.pagination.numberOfPages;
+                    start -= diff;
+                    end = this.pagination.numberOfPages;
+                }
+
+                let j = 0;
+                for (let i = start; i <= end; i++) {
+                    this.pageNumbers[j] = start + j;
+                    j++;
+                }
+
+                this.images = envelope.items;
 
                 this.loaded = true;
             },

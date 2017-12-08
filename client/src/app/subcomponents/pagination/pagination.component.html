@@ -2,8 +2,8 @@
     <li [ngClass]="{'active': pagination.currentPage === 1, 'waves-effect': pagination.currentPage !== 1}" (click)="onFirstPage()"><a><i class="material-icons">first_page</i></a></li>
     <li [ngClass]="{'active': pagination.currentPage === 1, 'waves-effect': pagination.currentPage !== 1}" (click)="onPageDown()"><a><i class="material-icons">chevron_left</i></a></li>
 
-    <li *ngFor="let page of pages; let i = index" [ngClass]="{'active': (pagination.currentPage - 1) === i, 'waves-effect': (pagination.currentPage - 1) !== i}" (click)="onPageNum(i + 1)"><a>{{ i+1 }}</a></li>
+    <li *ngFor="let page of pageNumbers; let i = index" [ngClass]="{'active': pagination.currentPage === pageNumbers[i], 'waves-effect': pagination.currentPage !== pageNumbers[i]}" (click)="onPageNum(pageNumbers[i])"><a>{{ pageNumbers[i] }}</a></li>
 
-    <li [ngClass]="{'active': pagination.currentPage === pages.length, 'waves-effect': pagination.currentPage !== pages.length}" (click)="onPageUp()"><a><i class="material-icons">chevron_right</i></a></li>
-    <li [ngClass]="{'active': pagination.currentPage === pages.length, 'waves-effect': pagination.currentPage !== pages.length}" (click)="onLastPage()"><a><i class="material-icons">last_page</i></a></li>
+    <li [ngClass]="{'active': pagination.currentPage === pageNumbers[pageNumbers.length - 1], 'waves-effect': pagination.currentPage !== pageNumbers[pageNumbers.length - 1]}" (click)="onPageUp()"><a><i class="material-icons">chevron_right</i></a></li>
+    <li [ngClass]="{'active': pagination.currentPage === pageNumbers[pageNumbers.length - 1], 'waves-effect': pagination.currentPage !== pageNumbers[pageNumbers.length - 1]}" (click)="onLastPage()"><a><i class="material-icons">last_page</i></a></li>
 </ul>

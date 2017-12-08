@@ -19,6 +19,7 @@ export class ResultComponent implements OnInit {
     averageTime: number;
     grid: boolean;
     pages: string[][] = [];
+    pageNumbers: number[];
     pagination: IPagination;
 
     constructor(
