@@ -80,26 +80,10 @@ export class QueryComponent implements OnInit {
                 this.images = [];
                 this.pageNumbers = [];
 
-                let start = this.pagination.currentPage - this.utilities.PAGINATION_OFFSET;
+                const startEnd = this.utilities.getPaginationStartEnd(this.pagination);
 
-                let diff = 0;
-                if (start < 1) {
-                    diff = Math.abs(start) + 1;
-                    start = 1;
-                }
-
-                let end = (start === 1
-                    ? this.pagination.currentPage + this.utilities.PAGINATION_OFFSET + diff
-                    : this.pagination.currentPage + this.utilities.PAGINATION_OFFSET);
-
-                if (this.pagination.numberOfPages < end) {
-                    diff = end - this.pagination.numberOfPages;
-                    start -= diff;
-                    end = this.pagination.numberOfPages;
-                }
-
-                for (let i = start, j = 0; i <= end; i++ , j++) {
-                    this.pageNumbers[j] = start + j;
+                for (let i = startEnd.start, j = 0; i <= startEnd.end; i++ , j++) {
+                    this.pageNumbers[j] = startEnd.start + j;
                 }
 
                 for (let i = 0; i < 4; i++) {

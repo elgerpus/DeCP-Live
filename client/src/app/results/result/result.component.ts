@@ -29,7 +29,7 @@ export class ResultComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.resultID = this.route.snapshot.params["resultID"];
+        this.resultID = this.route.snapshot.params["batchID"];
         this.grid = true;
 
         this.pagination = {

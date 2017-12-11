@@ -12,12 +12,26 @@ const _io = io(_http);
 
 const PORT = 32000;
 const PAGE_SIZE = 16;
-const ROOT_PATH = `${__dirname}/images`;
+const IMAGE_PATH = `${__dirname}/images`;
+const PENDING_BATCHES_PATH = `${__dirname}/pending_batches`;
+const READY_BATCHES_PATH = `${__dirname}/ready_batches`;
+const RESULTS_PATH = `${__dirname}/results`;
 
 class Image {
     constructor(imageID, imageString) {
         this.imageID = imageID;
         this.imageString = imageString;
+    }
+}
+
+class Result {
+    constructor(batchID, status, b, k, timestamp, images) {
+        this.batchID = batchID;
+        this.status = status;
+        this.b = b;
+        this.k = k;
+        this.timestamp = timestamp;
+        this.images = images;
     }
 }
 
@@ -29,8 +43,8 @@ class Pagination {
 }
 
 class Envelope {
-    constructor(images, pagination) {
-        this.images = images;
+    constructor(items, pagination) {
+        this.items = items;
         this.pagination = pagination;
     }
 }
@@ -38,9 +52,15 @@ class Envelope {
 const users = [];
 const images = [];
 
+// Create directory structures if it doesn't exist
+fs.ensureDirSync(IMAGE_PATH);
+fs.ensureDirSync(PENDING_BATCHES_PATH);
+fs.ensureDirSync(READY_BATCHES_PATH);
+fs.ensureDirSync(RESULTS_PATH);
+
 const builder = path => {
     try {
-        const items = fs.readdirSync(`${ROOT_PATH}${path}`);
+        const items = fs.readdirSync(`${IMAGE_PATH}${path}`);
 
         for (let i = 0; i < items.length; i++) {
             builder(`${path}/${items[i]}`);
@@ -55,7 +75,7 @@ const builder = path => {
 };
 
 try {
-    const items = fs.readdirSync(ROOT_PATH);
+    const items = fs.readdirSync(IMAGE_PATH);
 
     for (let i = 0; i < items.length; i++) {
         builder(`/${items[i]}`);
@@ -84,6 +104,7 @@ _io.on("connection", (socket) => {
     users.push(socket);
     console.log("User: " + socket.id + " connected!");
 
+    // Get query images
     socket.on("getImages", (pageNumber) => {
         // Get the image paths
         const collection = _.chain(images).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -91,7 +112,7 @@ _io.on("connection", (socket) => {
         // Resize images and convert to buffer
         const promises = [];
         for (let i = 0; i < collection.length; i++) {
-            promises.push(sharp(ROOT_PATH + collection[i]).resize(300).min().toFormat("jpg").toBuffer());
+            promises.push(sharp(IMAGE_PATH + collection[i]).resize(300).min().toFormat("jpg").toBuffer());
         }
 
         // After all images have been converted to a buffer
@@ -108,6 +129,7 @@ _io.on("connection", (socket) => {
         });
     });
 
+    // Submit image query
     socket.on("imageQuery", (imagePaths, b, k) => {
         console.log("User queried. b: " + b + " | k: " + k + " | IDs: " + imagePaths);
 
@@ -118,7 +140,7 @@ _io.on("connection", (socket) => {
         }
 
         // File path to pending batch file
-        const filepath = __dirname + "/pending_batches/" + b + "." + k;
+        const filepath = PENDING_BATCHES_PATH + "/" + b + "." + k;
 
         // Create file if not exists
         if (!fs.existsSync(filepath)) {
@@ -139,7 +161,7 @@ _io.on("connection", (socket) => {
 
             // Prepend root path to imageIDs
             for (let i = 0; i < imagePaths.length; i++) {
-                imagePaths[i] = ROOT_PATH + imagePaths[i];
+                imagePaths[i] = IMAGE_PATH + imagePaths[i];
             }
 
             // File has contents -> Don't add duplicates and update header
@@ -173,11 +195,53 @@ _io.on("connection", (socket) => {
                     return;
                 }
 
+                // Emit to the client
                 socket.emit("imageQuery", true);
             });
         });
     });
 
+    // Get results
+    socket.on("getResults", (pageNumber) => {
+
+        // Read results directory
+        fs.readdir(RESULTS_PATH)
+            .then(results => {
+                // Only list directories, not files
+                const dirs = results.filter(f => fs.statSync(`${RESULTS_PATH}/${f}`).isDirectory());
+
+                // Take a subset for pagination
+                const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+
+                // Read the batch.res files
+                const promises = [];
+                for (let i = 0; i < collection.length; i++) {
+                    promises.push(fs.readFile(`${RESULTS_PATH}/${collection[i]}/batch.res`));
+                }
+
+                Promise.all(promises)
+                    .then(resultFiles => {
+                        // Parse the files
+                        const items = [];
+                        for (let i = 0; i < resultFiles.length; i++) {
+                            const lines = resultFiles[i].toString().split("\n");
+                            const header = lines[0].split(":");
+                            items.push(new Result(header[0], "Done", header[1], header[2], new Date(), lines.length - 1));
+                        }
+
+                        // Emit to the client
+                        socket.emit("getResults", new Envelope(items, new Pagination(pageNumber, Math.ceil(results.length / PAGE_SIZE))));
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+            })
+            .catch(err => {
+                console.log(err);
+            });
+    });
+
+    // Disconnect
     socket.on("disconnect", () => {
         users.splice(users.indexOf(socket), 1);
         console.log("User: " + socket.id + " disconnected!");

@@ -26,7 +26,7 @@ export class ResultImageComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.resultID = this.route.snapshot.params["resultID"];
+        this.resultID = this.route.snapshot.params["batchID"];
         this.imageID = this.route.snapshot.params["imageID"];
         this.grid = true;
 
