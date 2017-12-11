@@ -1,15 +1,18 @@
 package pipelines
 
-import eCP.Java.{DeCPDyTree, SiftKnnContainer, SiftDescriptorContainer, eCPALTree}
+import eCP.Java.{DeCPDyTree, SiftDescriptorContainer, SiftKnnContainer, eCPALTree}
 import extLibrary.boofcvlib
-
 import java.io._
+import java.time.temporal.TemporalUnit
+import java.time.{Duration, Instant}
+import javax.print.attribute.standard.Destination
 
 import org.apache.hadoop.io.IntWritable
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
+
 import scala.io.Source
 import scala.collection.immutable.HashSet
 
@@ -32,7 +35,7 @@ object DeCPImageScanning {
       println("Input parameters for usage are:")
       println("<SparkMaster> <SparkHome> <indexObjectFile> <datasetPath> <datasetFormat:0=SequenceFile;1=ObjectFile>" +
         "<QuerySetSequenceFile> <searchExpansion (b): 0=sequential scan> <resultDirectory>" +
-        "<'optional' kNN size k: defaults to 20>")
+        "<'optional' kNN size knnSize: defaults to 20>")
       sys.exit(2)
     }
     // parse program arguments into variable-names that make some sense
@@ -47,13 +50,14 @@ object DeCPImageScanning {
       } else {
         args(5) + "/"
       }
-    val searchExpansion = args(6).toInt // 1
+    var searchExpansion = args(6).toInt // 1
     val resultdir = args(7) // /Code/Datasets/DeCPresults/run_b1/
-    val k = if (args.length > 7) {
+    var knnSize = if (args.length > 7) {
         args(8).toInt // 20
       } else {
         20
       }
+    var maxResults = 100;
     val cpydysOriginalPath  = if (args.length > 8) {
       args(9)
     } else {
@@ -195,6 +199,9 @@ object DeCPImageScanning {
         // delete the file for next iteration of the inf-loop
         queryBatchFiles(0).delete()
       } else {
+        // messure how long it will take to run this batch, starting timer..
+        val startTimer =  Instant.now()
+
         // stuff to search so we reset the sleep-timer in case we get more queries soon..
         sleepTimeFactor = 0.1
         // #### Creating the querydescriptorset and partitioninig it if needed ####
@@ -204,14 +211,19 @@ object DeCPImageScanning {
         val reader = Source.fromFile(queryBatchFiles(0)).getLines()
         // first line has the config info seperated by ':'
         val configFileds = reader.next().split(":")
-        // check and set b and k
-        var b = configFileds(0).toInt
-        if (b < 1 || b > 5 ) {
-          b = 1;
+        // check and set searchExpansion, knnSize and the maxResult size settings
+        searchExpansion = configFileds(0).toInt
+        if (searchExpansion < 1 || searchExpansion > 5 ) {
+          searchExpansion = 1;
         }
-        var k = configFileds(1).toInt
-        if (k < 5 ) {
-          k = 1;
+        knnSize = configFileds(1).toInt
+        if (knnSize < 5 ) {
+          knnSize = 20;
+        }
+        maxResults = configFileds(2).toInt
+        if ( maxResults < 10 || maxResults > 1000 ) {
+          println("Size of maxResult out of bounds (<10 or > 1000)")
+          maxResults = 100
         }
         //val rand = new scala.util.Random( System.currentTimeMillis() )
         //var queryFiles : List[(Long, File)] = Nil
@@ -225,6 +237,7 @@ object DeCPImageScanning {
           }
         }
         // we have read the config and we have a list of Files with all the query images to parse
+        // TODO: Check if queryFiles is empty and stop search if it is.
 
         val maxNumImagesBeforeMultiCore = 100
         val numPart = if ( queryFiles.length > maxNumImagesBeforeMultiCore) {
@@ -234,7 +247,6 @@ object DeCPImageScanning {
         }
         // paralellize the query workload before extracting the images
         val queryImgRDD = sc.parallelize( queryFiles, numPart ).randomSplit( Array.fill[Double]( numPart )( 1 ) )
-        var correctTopVoted = 0;
         // for each query image
         for ( queryImg <- queryImgRDD ) {
           // Extract the sifts, and we use the AbsoluteFilePath as the "key" with an "_descID" appended to it.
@@ -251,34 +263,67 @@ object DeCPImageScanning {
           } else {
             // scan the full descriptors, read from disk and all..
             val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
-            c2qCreationAndBroadcastScan( sc, myTree, dbRDD2, queryRDD, k, 40 )
+            c2qCreationAndBroadcastScan( sc, myTree, dbRDD2, queryRDD, knnSize, maxResults )
           }
+
           // Done scanning so we print the results..
+          // stop the timer ..
+          val runningTime = Duration.between(startTimer, Instant.now()).getSeconds
+          // We have a query batch with search settings ..
+          // Then we have multiple search results, one per queryimage in the batch ..
+          // create directory for results
+          var batchDir = new File (resultdir + queryBatchFiles(0).getName)
+          if (! batchDir.exists()) {
+            batchDir.mkdir()
+          } else {
+            val tmpName = batchDir.getAbsolutePath() + "_" + System.currentTimeMillis().toString
+            printf("batch with this name already exists, renameing to :" + tmpName)
+            batchDir = new File( tmpName)
+            batchDir.mkdir()
+          }
+          // write the batch result file
+
+          val resFileBatch = new BufferedWriter( new FileWriter( batchDir.getAbsolutePath + "/batchresults.res" ) )
+          // format of first line is "b:k:maxResultsPerQuery:#queryImagesInBatch:timeToProcessBatch:"
+          resFileBatch.write( searchExpansion.toString + ":" + knnSize.toString  + ":" + maxResults.toString  + ":"
+            +result.length.toString + ":" + runningTime.toString + ":\n" )
+          resFileBatch.flush()
           println("printing results to result directory " + resultdir)
           for (r <- result) {
-            val idstr = "00000000" + r._1.toString()
-            val filename = idstr.substring(idstr.length - 8, idstr.length)
-            printf("Writing to: " + resultdir + filename + ".ecp.html")
-            val file = new File( resultdir + filename + ".ecp.html" )
+            // make the File handle for the result file
+            val idstr = r._1
+            val filenameFullPath = batchDir.getAbsolutePath + "/_" + idstr.replaceAll("/",":") + ".res"
+            println("Writing to: " + filenameFullPath)
+            val file = new File( filenameFullPath )
             val bout = new BufferedWriter( new FileWriter( file ) )
-            val content = resultToHTMLConverter( r._1, r._2 )
-            bout.write( content )
+            // the resultstring has first a single line with the number of SIFTs extraced from the query-image, then
+            // each line that follows is a ranked list of databas-image-id and the number of votes it got
+            val lines = r._2.split("\n") // get all the lins of the result-string
+            // For our output we want the path to the query-image, followed by a colon and the number of SIFTs
+            bout.write(idstr + ":" + lines(0).toInt + ":\n")
+            for (line <- lines) {
+              // the database image ID and the number of votes is seperated by a single space (' ')
+              val words = line.split(" ")
+              if (words.length > 2) {  // skip the first line that only had the number of SIFTs
+                // TODO: HERE WE NEED TO REPLACE THE db-IIDs with the absoulute path
+                // Shit mix fix until we do the TO-DO above is the hard-code the path
+                bout.write( cpydysOriginalPath +  words(1) + ".jpg" + ":" + words(2) + ":\n")
+              }
+            }
+
             bout.flush()
             bout.close()
 
-            val chkval = filename.substring( 2, filename.length - 1 )
-            val words = r._2.split(" ")
-            if ( words.length > 0 & words( 1 ).contains( chkval ) ) {
-              correctTopVoted += 1
-            }
+            // add the result file to the batchResult as a seperate line
+            resFileBatch.write(filenameFullPath + "\n")
+            resFileBatch.flush()
           } // end for (r <- result)
+
           println("Batch of " + result.length + " done and written to file")
         } // end for (queryImgRDD <- queryImgRDD)
-        println( "TopVoteMatch = " + correctTopVoted.toString +" / " + queryFiles.length )
-        for ( f <- queryFiles ) {
-          // delete the files from the query folder so we don't mistake them for new queries next time
-          f.delete()
-        }
+
+        // delete the processed batch file
+        queryBatchFiles(0).delete()
       } // end else (of the if not spin-locking, waiting for queries
     } // end while
     BoFDB.unpersist(true)
@@ -294,17 +339,17 @@ object DeCPImageScanning {
    * @param result Result as lines of plain text (not HTML)
    * @return Results as HTML formatted text
    */
-  def resultToHTMLConverter( id: Int, result : String ) : String = {
+  def resultToHTMLConverter( id: String, result : String ) : String = {
     // result is of the format "Int(numdesc)\n\nInt(rowNum)\tINT(id)\tVote
 
     val htmlbuilder = new StringBuilder()
-    htmlbuilder.append("<HTML>\n<HEAD>\n\t<TITLE>Result for " + id.toString + "</TITLE>\n<HEAD>\n<BODY>\n")
+    htmlbuilder.append("<HTML>\n<HEAD>\n\t<TITLE>Result for " + id + "</TITLE>\n<HEAD>\n<BODY>\n")
     val lines = result.split("\n")
     htmlbuilder.append("<h2><a href='/queries/'>Queries</a>&nbsp &nbsp <a href='/results'>Results</a></h2>\n")
-    htmlbuilder.append("<h2>Results for query " + id.toString + " (" + lines(0).toInt + " descriptors) <br>")
+    htmlbuilder.append("<h2>Results for query " + id + " (" + lines(0).toInt + " descriptors) <br>")
     htmlbuilder.append("\t<div style=\"width: 200px; height:200px; padding: 5px;border: margin: 0px;\">\n")
-    htmlbuilder.append("\t\t<a href='./qimgs/" + id.toString + ".jpg'>\n")
-    htmlbuilder.append("\t\t\t<img src='./qimgs/" + id.toString + ".jpg' style='max-width: 95%;max-height: 95%;'>\n")
+    htmlbuilder.append("\t\t<a href='" + id + "'>\n")
+    htmlbuilder.append("\t\t\t<img src='" + id + "' style='max-width: 95%;max-height: 95%;'>\n")
     htmlbuilder.append("\t\t</a>\n\t</div>\n")
     htmlbuilder.append("</h2>\n<hr>\n")
     for (line <- lines) {
@@ -542,7 +587,7 @@ object DeCPImageScanning {
                                     dbRDD     : RDD[(Int, Array[SiftDescriptorContainer])],
                                     queryRDD  : RDD[(Int, Array[(String, SiftDescriptorContainer)])],
                                     k         : Int,
-                                    maxResults: Int) : Array[(Int, String)] = {
+                                    maxResults: Int) : Array[(String, String)] = {
     // start by collecting the querydata into a single map that we can broadcast
 
     queryRDD.cache()
@@ -582,18 +627,21 @@ object DeCPImageScanning {
     })
       //*  prevent double counting imageIDs, even if b=1
       .map( a => {
-      val ret = new SiftKnnContainer(a._2.getK)
-      ret.SetQueryPoint(a._2.getQueryPoint)
-      a._2.getknnPairArray().map( knnpair => ret.addNoDuplicateIDs(knnpair.pointID, knnpair.distance))
-      (a._1, ret)
-    }) // */
+        val ret = new SiftKnnContainer(a._2.getK)
+        ret.SetQueryPoint(a._2.getQueryPoint)
+        a._2.getknnPairArray().map( knnpair => ret.addNoDuplicateIDs(knnpair.pointID, knnpair.distance))
+        (a._1, ret)
+       }) // */
       //println( " b " + b.count)
       //val c = b
       // done scanning all b clusters so we have b k-NNs for each Qp, need to merge to 1 k-NN per Qp
       .reduceByKey( (a,b) => SiftKnnContainer.mergetosizeoflarger(a,b) )
       // done reducing back to one k-NN per Qp, now change key to be ImageID
       //val d = c
-      .map( pair => (pair._2.getQueryPoint().id, pair._2) )
+        .map( pair => {
+          (pair._1.substring(0, pair._1.lastIndexOf('_') ), pair._2)
+        })
+      //.map( pair => (pair._2.getQueryPoint().id, pair._2) )
       //println( " d " + d.count)
       // VoteAggregate all the k-NNs for each query point by reducing again by key
       //val e = d
@@ -851,7 +899,7 @@ object DeCPImageScanning {
   def BoFscan (sc : SparkContext,
                dbRDD : RDD[(Int, SiftKnnContainer)],
                queryRDD : RDD[(Int, Array[(String, SiftDescriptorContainer)])],
-               maxResults: Int) : Array[(Int, String)] =  {
+               maxResults: Int) : Array[(String, String)] =  {
 
     // start by collecting the querydata into a single map that we can broadcast
     val c2qLookup = queryRDD.collectAsMap()
@@ -889,7 +937,8 @@ object DeCPImageScanning {
       // done scanning all b clusters so we have b k-NNs for each Qp, need to merge ot 1 k-NN per Qp
       .reduceByKey( (a,b) => SiftKnnContainer.mergetosizeofboth(a,b) )
       // done reducing back to one k-NN per Qp, now change key to be ImageID
-      .map( pair => (pair._2.getQueryPoint().id, pair._2) )
+        .map( pair => (pair._1.substring(0, pair._1.lastIndexOf('_')), pair._2) )
+      //.map( pair => (pair._2.getQueryPoint().id, pair._2) )
       // VoteAggregate all the k-NNs for each query point by reducing again by key
       .reduceByKey( (a,b) => SiftKnnContainer.voteAggregate(a,b) )
       // the result-NNs are now super long, so we cut them down in size to a max value

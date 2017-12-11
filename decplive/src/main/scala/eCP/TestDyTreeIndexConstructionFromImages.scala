@@ -1,4 +1,14 @@
-package eCP;
+package eCP
+
+import java.io._
+import java.util.Random
+
+import eCP.Java.{DeCPDyTree, SiftDescriptorContainer}
+import extLibrary.boofcvlib
+
+import scala.reflect.ClassTag
+
+
 
 object TestDyTreeIndexConstructionFromImages {
 
