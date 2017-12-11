@@ -9,7 +9,7 @@ import { IPagination } from "./../../interfaces/ipagination";
 export class PaginationComponent implements OnInit {
 
     @Input() pagination: IPagination;
-    @Input() pages: any[][];
+    @Input() pageNumbers: number[];
     @Output() onPage = new EventEmitter<IPagination>();
 
     constructor() { }

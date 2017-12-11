@@ -16,7 +16,10 @@ import { IImage } from "../interfaces/iimage";
 export class QueryComponent implements OnInit {
 
     selected: string[] = [];
-    pages: IImage[][] = [];
+    b: number;
+    k: number;
+    images: IImage[][];
+    pageNumbers: number[];
     pagination: IPagination;
     loaded = false;
 
@@ -28,42 +31,7 @@ export class QueryComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-
         this.getImages(1);
-
-        // this.pages[0].push("/assets/images/long.jpeg");
-        // this.pages[0].push("/assets/images/parallax1.jpg");
-        // this.pages[0].push("/assets/images/parallax2.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-        // this.pages[0].push("/assets/images/parallax3.jpg");
-
-        // this.pages[1].push("/assets/images/parallax1.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
-        // this.pages[1].push("/assets/images/parallax2.jpg");
     }
 
     onImage(imageID: string) {
@@ -78,7 +46,7 @@ export class QueryComponent implements OnInit {
     }
 
     onSubmit() {
-        this.socketService.sendQueryImages(this.selected).first().subscribe(
+        this.socketService.sendQueryImages(this.selected, this.b, this.k).first().subscribe(
             success => {
                 if (success) {
                     this.toastService.show("Query succeeded!", 4000);
@@ -96,7 +64,7 @@ export class QueryComponent implements OnInit {
 
     onPage(pagination: IPagination) {
         this.pagination = pagination;
-
+        this.socketService.removeListener("getImages");
         this.getImages(this.pagination.currentPage);
     }
 
@@ -109,12 +77,44 @@ export class QueryComponent implements OnInit {
         this.socketService.getQueryImages(page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
+                this.images = [];
+                this.pageNumbers = [];
 
-                for (let i = 0; i < this.pagination.numberOfPages; i++) {
-                    this.pages[i] = [];
+                let start = this.pagination.currentPage - this.utilities.PAGINATION_OFFSET;
+
+                let diff = 0;
+                if (start < 1) {
+                    diff = Math.abs(start) + 1;
+                    start = 1;
                 }
 
-                this.pages[this.pagination.currentPage - 1] = envelope.items;
+                let end = (start === 1
+                    ? this.pagination.currentPage + this.utilities.PAGINATION_OFFSET + diff
+                    : this.pagination.currentPage + this.utilities.PAGINATION_OFFSET);
+
+                if (this.pagination.numberOfPages < end) {
+                    diff = end - this.pagination.numberOfPages;
+                    start -= diff;
+                    end = this.pagination.numberOfPages;
+                }
+
+                for (let i = start, j = 0; i <= end; i++ , j++) {
+                    this.pageNumbers[j] = start + j;
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    this.images[i] = [];
+
+                    for (let j = 0; j < 4; j++) {
+                        const item = envelope.items[(i * 4) + j];
+
+                        if (item === undefined) {
+                            break;
+                        }
+
+                        this.images[i][j] = item;
+                    }
+                }
 
                 this.loaded = true;
             },

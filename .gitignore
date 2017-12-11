@@ -189,3 +189,4 @@ typings/
 
 # Custom
 yarn.lock
+server/src/images/1holidays/*
