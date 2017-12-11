@@ -54,5 +54,4 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
     }
 }
 
-
 test in assembly := {}

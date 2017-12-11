@@ -28,12 +28,20 @@ object DeCPImageScanning {
 
   def main(args: Array[String]): Unit = {
 
-    println(args.length)
+    println("Booting with " + args.length + " arguments")
     if (args.length < 8) {
       println("Input parameters for usage are:")
-      println("<SparkMaster> <SparkHome> <indexObjectFile> <datasetPath> <datasetFormat:0=SequenceFile;1=ObjectFile>" +
-        "<QuerySetSequenceFile> <searchExpansion (b): 0=sequential scan> <resultDirectory>" +
-        "<'optional' kNN size knnSize: defaults to 20>")
+      println(
+        "<SparkMaster>" +                          // args(0) -- local[4]
+        "<SparkHome> " +                           // args(1) -- /Code/spark-2.2.0-bin-hadoop2.7
+        "<indexObjectFile> " +                     // args(2) -- /Code/decp/DeCP/run/DeCPDyTree_L3-treeA3-C200000.ser
+        "<pathToPreIndexedDataset> " +             // args(3) --  /Code/decp/DeCP/run/db
+        "<datasetFormat:0=SequenceFile;1=ObjectFile>" + // args(4) -- 1
+        "<QuerySetSource> " +                      // args(5) -- /Code/decp/DeCP/run/q/
+        "<resultDirectoryRoot>" +                  // args(6) -- /Code/decp/DeCP/run/r/
+        "<searchExpansion (default value)> " +     // args(7) -- 1
+        "<kNN-size (default value)>" +             // args(8) -- 20
+        "<ImagesToAddAtBoot>")                     // args(9) -- /Code/decp/DeCP/run/r/imgs/
       sys.exit(2)
     }
     // parse program arguments into variable-names that make some sense
@@ -43,26 +51,31 @@ object DeCPImageScanning {
     val objectIndexFile = args(2) // /Code/decp/DeCP/run/DeCPDyTree_L3-treeA3-C200000.ser
     val dbFileName = args(3) // /...
     val dbFileFormat = args(4).toInt // 1
-    val queryPath = if (args(5).endsWith("/") ) { // /Code/Datasets/ImgQueries/
+    val queryPath = if (args(5).endsWith("/") ) { // /Code/decp/DeCP/run/q/
         args(5)
       } else {
         args(5) + "/"
       }
-    var searchExpansion = args(6).toInt // 1
-    val resultdir = args(7) // /Code/Datasets/DeCPresults/run_b1/
-    var knnSize = if (args.length > 7) {
-        args(8).toInt // 20
+    val resultdir = args(6) // /Code/decp/DeCP/run/r/
+    var searchExpansion = if ( args.length > 6 ) { // searchExpansion defaults to 1 (no expansion)
+        args(7).toInt
+      } else {
+        1
+      }
+    var knnSize = if (args.length > 7) {  // knnSize defaults to 20
+        args(8).toInt
       } else {
         20
       }
     var maxResults = 100;
-    val cpydysOriginalPath  = if (args.length > 8) {
+    val imagesToAddToDB  = if (args.length > 8) {  // Images that we want to add to the indexed DB
       args(9)
     } else {
       "/home/decp/images/results/imgs/"
     }
-/* #### Create the spark context ################# // */
 
+
+/* #### Create the spark context ########################### ########################### ########################### */
     val conf = new SparkConf()
       .setMaster(sparkMaster)
       .setAppName("DeCPScanning")
@@ -81,93 +94,73 @@ object DeCPImageScanning {
     //.set("spark.files.fetchTimeout", "600")
     //.set("spark.local.dir", "/Volumes/MrRed/tmp")
 
-
     val sc = new SparkContext(conf)
     println("############ SPARK CONFIGURATION STARTS ################")
     println(sc.getConf.toDebugString)
     println("############ SPARK CONFIGURATION ENDS ################")
+/* #### Spark context created    ########################### ########################### ########################### */
 
-    // We need an instance of an index (eCPALTree/DeCPDyTree)
+/* #### Load the Index Structure ########################### ########################### ########################### */
+    // Load the index structure, an instance of an index (eCPALTree/DeCPDyTree)
     // If we load a DB that is pre-built we do "preferably" want the same tree as was used to create said DB :)
     val myTree = loadIndexFromObjectFile( objectIndexFile )
+/* #### Index Structure Loaded   ########################### ########################### ########################### */
 
+/* #### Load SIFT ext. library   ########################### ########################### ########################### */
     val booflib = new boofcvlib // load the SIFT extractor library..
-//*
+/* #### SIFT ext. library Loaded ########################### ########################### ########################### */
 
-
-    val filesToAdd = booflib.recursiveListJPGFiles( new java.io.File( cpydysOriginalPath ), ".jpg" )
-
+/* #### Find and Index Images    ########################### ########################### ########################### */
+    val filesToAdd = booflib.recursiveListJPGFiles( new java.io.File( imagesToAddToDB ), ".jpg" ) //
     val partitionsToUse =
-      if (filesToAdd.size > 1000) {
+      if (filesToAdd.size > 1000) {  // set the partition size of the parallelized set of images to add
         filesToAdd.size / 500
       } else {
         4
       }
-    val cpydysImgToAddRDD = sc.parallelize( filesToAdd,  partitionsToUse )
-    val cpydysDescToAddRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, cpydysImgToAddRDD )
+    // ask spark to distribute the image-set
+    val imgToAddRDD = sc.parallelize( filesToAdd,  partitionsToUse )
     // extracting SIFTs using boofvc
-    val addCdayDBRDD = queryDescriptorAssignments( sc, myTree, cpydysDescToAddRDD, 1).map( it => {
+    val descToAddRDD =
+      booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, imgToAddRDD )
+    // index the SIFTs (using the DeCP-Index-hierarchy
+    val toAddDBRDD = queryDescriptorAssignments( sc, myTree, descToAddRDD, 1 ).map( it => {
       // I need to remove the querypointID String as it is not needed, we only keep the clusterID as key
       val key = it._1;
       val value = (it._2).map( descPair => descPair._2 )
       (key, value)
     }).persist(StorageLevel.DISK_ONLY)
     // store the indexed images as a dataset on disk in objectfile form
-    //addCdayDBRDD.saveAsObjectFile("/Code/Datasets/paris_hday_cday_asObjectFile")
-// */
-    val hdaysOriginalPath =  resultdir + "imgs/"
-    val hdaysImgToAddRDD = sc.parallelize(booflib.recursiveListJPGFiles( new java.io.File( hdaysOriginalPath ), ".jpg" ) )
-    val hdaysDescToAddRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, hdaysImgToAddRDD )
-    val addHdayDBRDD = queryDescriptorAssignments( sc, myTree, hdaysDescToAddRDD, 1 ).map( it => {
-      // I need to remove the querypointID String as it is not needed, we only keep the clusterID as key
-      val key = it._1;
-      val value = (it._2).map( descPair => descPair._2)
-      (key, value)
-    }).persist(StorageLevel.DISK_ONLY)
+    //toAddDBRDD.saveAsObjectFile("/Code/Datasets/paris_hday_cday_asObjectFile")
+/* #### Indexing Images Done     ########################### ########################### ############################ */
 
-// ######  CREATING DATABASE ############################
-    // we need to get the descriptors from the query images (reading .vec files)
-    //val descriptors = parseQueriesFromSiftFiles( querysetPath )
-    /* readin data from .vec files
-    val addHdayDBRDD = queryDescriptorAssignments( sc, myTree, descriptors.toSeq, 1).map( a => {
-      // I need to remove the querypointID String as it is not needed, we only keep the clusterID as key
-      val key = a._1;
-      val value = (a._2).map( descPair => descPair._2)
-      (key, value)
-    })
-    // */
+/* #### Creating the DATABASE - Load-from-file and merge it with what we extracted from the images ################## */
+    val dbRDD = if ( new File(dbFileName).exists() ) {
+      println("Load the database from (Object)-file")
+      val dbFromFileRDD = loadDB( sc, dbFileName, dbFileFormat )
 
-    // we need to load the 100M distraction pts DB as an RDD
-//    val dbRDD = loadDB(sc, dbFileName, dbFileFormat)
-    /*
-        // load paris hollidays and copydays database
-        val PaHdayCday_ObjectFile = "/Code/Datasets/paris_hday_cday_asObjectFile"
-        var PaHdayCday_Format = 1;
-        val addCdayDBRDD = loadDB(sc, PaHdayCday_ObjectFile, PaHdayCday_Format).persist(StorageLevel.DISK_ONLY)
-        //  I want to joing the queries to the db to verify that I can finf them and chache the result to disk.
-        println("Cday has: " + addCdayDBRDD.count + " Hday has " + hdaysDescToAddRDD.count() )
-        val addToDBRDD = this.leftOuterJoinTwoDBRDDs(addCdayDBRDD, addHdayDBRDD).persist(StorageLevel.DISK_ONLY)
-        println("add has = " + addToDBRDD.count() )
-        addCdayDBRDD.unpersist(true)
-        addHdayDBRDD.unpersist(true)
-    */
-    val addToDBRDD = addHdayDBRDD;  // added because we removed the loading of the paHdayCday..
+      // make a supplemented dbRDD called dbRDD but we need to cache this one..
+      println("Merging the loaded and extracted databases")
+      this.joinTwoDBRDDs(dbFromFileRDD, toAddDBRDD)
+    } else {
+      toAddDBRDD
+    }.persist(StorageLevel.DISK_ONLY)
 
-    // make a supplemented dbRDD called dbRDD2 but we need to cache this one..
-    ////val dbRDD2 = this.joinTwoDBRDDs(dbRDD, addToDBRDD).persist(StorageLevel.DISK_ONLY)
-    //val dbRDD2 = this.leftOuterJoinTwoDBRDDs(dbRDD, addToDBRDD).persist(StorageLevel.DISK_ONLY)
-    //addToDBRDD.unpersist(true)
+    // unpersist the toAddDBRDD (as we don't need it anymore)
+    toAddDBRDD.unpersist()
 
-    val dbRDD2 = addToDBRDD
     // force db-creation at boot-time
-    println( "dbRDD2 has " + dbRDD2.count() + " clusters and ")
-    //+ dbRDD2.map( a => a._2.length ).reduce( (a,b) => a+b ) + " descriptors" )
+    println( "dbRDD has " + dbRDD.count() + " clusters and ")
+    //+ dbRDD.map( a => a._2.length ).reduce( (a,b) => a+b ) + " descriptors" )
+/* #### Done creating the database #################################### #################################### #########*/
 
-// make a BoF db from a dbRDD supplemented with the images
-    val BoFDB = this.makeBoFDB( dbRDD2 ).cache() //persist(StorageLevel.DISK_ONLY)
+/* #### Create the BOF-version  ####################################### #################################### #########*/
+    // make a BoF db from a dbRDD supplemented with the images
+    val BoFDB = this.makeBoFDB( dbRDD ).cache() //persist(StorageLevel.DISK_ONLY)
     println("BoFDB has " + BoFDB.count() )
-// #### END OF DATABASE CREATION ########################
-// #### BEGINNING OF INFINITE SEARCH LOOP ###############
+/* #### END OF ALL DATABASE CREATION ######################## ######################## ######################## ##### */
+
+/* #### BEGINNING OF INFINITE SEARCH LOOP ############### ############### ############### ############### ########### */
     var run = true
     var sleepTimeFactor = 0.1
     while (run ) {
@@ -189,7 +182,7 @@ object DeCPImageScanning {
           // write to an object file using the spark context (currently only supported format).
           val outputname = reader.next()
           println("Saveing database to file to " + outputname)
-          dbRDD2.saveAsObjectFile( outputname )
+          dbRDD.saveAsObjectFile( outputname )
         } else {
           //TODO: Write out sequence as files or any other file format
           println("Saving Database failed as unknown file format was requested")
@@ -261,9 +254,10 @@ object DeCPImageScanning {
           } else {
             // scan the full descriptors, read from disk and all..
             val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
-            c2qCreationAndBroadcastScan( sc, myTree, dbRDD2, queryRDD, knnSize, maxResults )
+            c2qCreationAndBroadcastScan( sc, myTree, dbRDD, queryRDD, knnSize, maxResults )
           }
 
+/* #### Printing out the results #################################################################################### */
           // Done scanning so we print the results..
           // stop the timer ..
           val runningTime = Duration.between(startTimer, Instant.now()).getSeconds
@@ -280,7 +274,6 @@ object DeCPImageScanning {
             batchDir.mkdir()
           }
           // write the batch result file
-
           val resFileBatch = new BufferedWriter( new FileWriter( batchDir.getAbsolutePath + "/batchresults.res" ) )
           // format of first line is "b:k:maxResultsPerQuery:#queryImagesInBatch:timeToProcessBatch:"
           resFileBatch.write( searchExpansion.toString + ":" + knnSize.toString  + ":" + maxResults.toString  + ":"
@@ -303,15 +296,13 @@ object DeCPImageScanning {
               // the database image ID and the number of votes is seperated by a single space (' ')
               val words = line.split(" ")
               if (words.length > 2) {  // skip the first line that only had the number of SIFTs
-                // TODO: HERE WE NEED TO REPLACE THE db-IIDs with the absoulute path
+                // TODO: HERE WE NEED TO REPLACE THE db-IIDs with the absoulute path and stop using the imagesToAddDB path
                 // Shit mix fix until we do the TO-DO above is the hard-code the path
-                bout.write( cpydysOriginalPath +  words(1) + ".jpg" + ":" + words(2) + ":\n")
+                bout.write( imagesToAddToDB +  words(1) + ".jpg" + ":" + words(2) + ":\n")
               }
             }
-
             bout.flush()
             bout.close()
-
             // add the result file to the batchResult as a seperate line
             resFileBatch.write(filenameFullPath + "\n")
             resFileBatch.flush()
@@ -323,15 +314,18 @@ object DeCPImageScanning {
         // delete the processed batch file
         queryBatchFiles(0).delete()
       } // end else (of the if not spin-locking, waiting for queries
+/* #### Done printing the search results ############################################################################ */
     } // end while
     BoFDB.unpersist(true)
-    dbRDD2.unpersist(true)
+    dbRDD.unpersist(true)
     println("fin")
     sys.exit(0)
   }// end main
 
   /**
-   * Create a .html file style file to display results
+   * Create a .html file style file to display results..
+   * This function assumes the image-file source is in a fixed sub-directory called ./imgs/
+   * and that all the image-files in that sub-directory are named the same as the numeric DB-imageID
    *
    * @param id  Query-image-id
    * @param result Result as lines of plain text (not HTML)
