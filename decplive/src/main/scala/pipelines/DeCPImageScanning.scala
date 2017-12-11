@@ -10,7 +10,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-
+import scala.io.Source
 import scala.collection.immutable.HashSet
 
 
@@ -38,9 +38,9 @@ object DeCPImageScanning {
     // parse program arguments into variable-names that make some sense
 
     val sparkMaster = args(0) // local[4]
-    val sparkHome = args(1) // /Code/spark-1.3.0
-    val objectIndexFile = args(2) // /Code/Datasets/Index_C2000000_L4_treeA3.ser
-    val dbFileName = args(3) // /Code/Datasets/db_100M_C2M_L4_treeA3_grouped_toArray_asObjectFile
+    val sparkHome = args(1) // /Code/spark-2.2.0-bin-hadoop2.7
+    val objectIndexFile = args(2) // /Code/decp/DeCP/run/DeCPDyTree_L3-treeA3-C200000.ser
+    val dbFileName = args(3) // /...
     val dbFileFormat = args(4).toInt // 1
     val queryPath = if (args(5).endsWith("/") ) { // /Code/Datasets/ImgQueries/
         args(5)
@@ -54,6 +54,11 @@ object DeCPImageScanning {
       } else {
         20
       }
+    val cpydysOriginalPath  = if (args.length > 8) {
+      args(9)
+    } else {
+      "/home/decp/images/results/imgs/"
+    }
 /* #### Create the spark context ################# // */
 
     val conf = new SparkConf()
@@ -86,8 +91,9 @@ object DeCPImageScanning {
 
     val booflib = new boofcvlib // load the SIFT extractor library..
 //*
-    val cpydysOriginalPath  = "/Code/Datasets/INRIA_Images/results/imgs/"
-    val filesToAdd = booflib.recursiveListJPGFiles( new java.io.File( cpydysOriginalPath ) )
+
+
+    val filesToAdd = booflib.recursiveListJPGFiles( new java.io.File( cpydysOriginalPath ), ".jpg" )
 
     val partitionsToUse =
       if (filesToAdd.size > 1000) {
@@ -108,7 +114,7 @@ object DeCPImageScanning {
     //addCdayDBRDD.saveAsObjectFile("/Code/Datasets/paris_hday_cday_asObjectFile")
 // */
     val hdaysOriginalPath =  resultdir + "imgs/"
-    val hdaysImgToAddRDD = sc.parallelize(booflib.recursiveListJPGFiles( new java.io.File( hdaysOriginalPath ) ) )
+    val hdaysImgToAddRDD = sc.parallelize(booflib.recursiveListJPGFiles( new java.io.File( hdaysOriginalPath ), ".jpg" ) )
     val hdaysDescToAddRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, hdaysImgToAddRDD )
     val addHdayDBRDD = queryDescriptorAssignments( sc, myTree, hdaysDescToAddRDD, 1 ).map( it => {
       // I need to remove the querypointID String as it is not needed, we only keep the clusterID as key
@@ -163,32 +169,77 @@ object DeCPImageScanning {
     var run = true
     var sleepTimeFactor = 0.1
     while (run ) {
-      val queryFiles = booflib.recursiveListJPGFiles( new java.io.File( queryPath ) )
-      if (queryFiles.length == 0) {
+      val queryBatchFiles = booflib.recursiveListJPGFiles( new java.io.File( queryPath ), ".batch" )
+      if (queryBatchFiles.length == 0) {
         Thread.sleep( (sleepTimeFactor * 1000).toInt )
         if (sleepTimeFactor < 5.0) {
           sleepTimeFactor += 0.1
         }
-      } else if ( queryFiles.length == 1 & queryFiles(0).getName.equals( "0.jpg" ) ) {
+      } else if ( queryBatchFiles.length == 1 & queryBatchFiles(0).getName.equals( "halt.batch" ) ) {
+        // halting condition to terminate the program
         run = false
-        queryFiles(0).delete()
+        queryBatchFiles(0).delete()
+      } else if ( queryBatchFiles.length == 1 & queryBatchFiles(0).getName.equals( "saveDB.batch" ) ) {
+        // We have a request to save the current state of the database to file
+        val reader = Source.fromFile(queryBatchFiles(0)).getLines()
+        // check what type of file we should output to:
+        if (reader.next() == "objectFile") {
+          // write to an object file using the spark context (currently only supported format).
+          val outputname = reader.next()
+          println("Saveing database to file to " + outputname)
+          dbRDD2.saveAsObjectFile( outputname )
+        } else {
+          //TODO: Write out sequence as files or any other file format
+          println("Saving Database failed as unknown file format was requested")
+        }
+        // delete the file for next iteration of the inf-loop
+        queryBatchFiles(0).delete()
       } else {
-        // stuff to do so we reset the sleep-timer in case we get more queries soon..
+        // stuff to search so we reset the sleep-timer in case we get more queries soon..
         sleepTimeFactor = 0.1
         // #### Creating the querydescriptorset and partitioninig it if needed ####
+
+        // parse the query.batch file to know what to do.
+        // take the first batch file and open a scala Source to read it.
+        val reader = Source.fromFile(queryBatchFiles(0)).getLines()
+        // first line has the config info seperated by ':'
+        val configFileds = reader.next().split(":")
+        // check and set b and k
+        var b = configFileds(0).toInt
+        if (b < 1 || b > 5 ) {
+          b = 1;
+        }
+        var k = configFileds(1).toInt
+        if (k < 5 ) {
+          k = 1;
+        }
+        //val rand = new scala.util.Random( System.currentTimeMillis() )
+        //var queryFiles : List[(Long, File)] = Nil
+        var queryFiles : List[File] = Nil
+        for( line <- reader ) {
+          //val qImgID : Long = rand.nextInt()
+          val ret = new File(line)
+          if (ret.exists()) {
+            //queryFiles = List((qImgID, ret)) ::: queryFiles
+            queryFiles = List((ret)) ::: queryFiles
+          }
+        }
+        // we have read the config and we have a list of Files with all the query images to parse
+
         val maxNumImagesBeforeMultiCore = 100
         val numPart = if ( queryFiles.length > maxNumImagesBeforeMultiCore) {
           queryFiles.length / maxNumImagesBeforeMultiCore
         } else {
           1
         }
+        // paralellize the query workload before extracting the images
         val queryImgRDD = sc.parallelize( queryFiles, numPart ).randomSplit( Array.fill[Double]( numPart )( 1 ) )
         var correctTopVoted = 0;
+        // for each query image
         for ( queryImg <- queryImgRDD ) {
+          // Extract the sifts, and we use the AbsoluteFilePath as the "key" with an "_descID" appended to it.
           val queryDescRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles(sc, queryImg)
           // we need to create an QueryRDD where the clusters to scan have been discovered
-          //val queryRDD = queryDescriptorAssignments(sc, myTree, descriptors.take(100000), searchExpansion)
-          //val queryRDD = queryDescriptorAssignments(sc, myTree, descriptors.toSeq, searchExpansion)
           val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
 
           // then I will use the joined db as the search db.
@@ -777,7 +828,7 @@ object DeCPImageScanning {
         var chk = new HashSet[Int]()
         for (p <- clstrData) {
           if(! chk.contains( p.id) ) {
-            knn.add( p.id , 1)
+            knn.add( p.id , 1 )
             chk += p.id
           }
         }// end for

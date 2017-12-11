@@ -136,7 +136,7 @@ object DeCPPointScanning_DynamicTree {
         val desc = new SiftDescriptorContainer()
         desc.id = it._2.id
         it._2.vector.copyToArray(desc.vector)
-        (it._1.get(), desc)
+        (it._1, desc)
       })
       // take one or more queries and broadcast them
       val bcqarr = sc.broadcast(query.take(10))

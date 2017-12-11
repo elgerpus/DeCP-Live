@@ -57,7 +57,7 @@ class boofcvlib() extends Serializable {
    * @return An RDD of arrays where each array contains all the Sifts extraced from each image.
    */
   def getSiftDescriptorsFromImagesAsRDDofArraysOfSiftDescriptorContainers(
-      sc : SparkContext, imageFilesRDD : RDD[File] ): RDD[Array[SiftDescriptorContainer]] =
+      sc : SparkContext, imageFilesRDD : RDD[File] ): RDD[(String, Array[SiftDescriptorContainer])] =
   {
     // for each image file in imageFilesRDD we :
     val res = imageFilesRDD.flatMap( imgFile => {
@@ -99,7 +99,7 @@ class boofcvlib() extends Serializable {
           // extract the sifts from the image
           getSiftDescriptorContainerArrayFromImageByteArrays( imageID, extractor.getSIFTDescriptorsAsByteArrays(imgf32) )
       }
-      List(descriptors)
+      List((imgFile.getAbsolutePath(), descriptors))
     })
     res
   }
@@ -109,10 +109,10 @@ class boofcvlib() extends Serializable {
     val res = getSiftDescriptorsFromImagesAsRDDofArraysOfSiftDescriptorContainers(sc, imageFilesRDD)
       .flatMap( it => {
         var ret : List[(String, SiftDescriptorContainer)] = Nil
-        for ( i <- 0 until it.length ) {
+        for ( i <- 0 until it._2.length ) {
           // we need key each QP uniquely, so we combine the ImageID and array order into a String separated by '_'.
-          val id = it(i).id.toString + "_" + i
-          val pair = (id, it(i) )
+          val id = it._1 + "_" + i
+          val pair = (id, it._2(i) )
           ret = List( pair ) ::: ret
         }
       ret
@@ -187,22 +187,66 @@ class boofcvlib() extends Serializable {
 
   /**
    * Returns a list of all .jpg files in filesystem sub-tree (recursive traversal down the rabbit hole)
-   * @param f Directory to traverse looking for .jpg files
-   * @return all .jpg files in and bellow directory f
+   * @param folder Directory to traverse looking for files
+   * @param fileTypeEnding file ending to look for, like ".jpg" or ".batch"
+   * @return all files of the given ending in and bellow directory given by folder param
    */
-  def recursiveListJPGFiles(f: File): Array[File] = {
+  def recursiveListJPGFiles(folder: File, fileTypeEnding: String): Array[File] = {
 
     val filter = new FilenameFilter {
       override def accept(dir: File, name: String): Boolean = {
         var ret = false
-        if ( name.endsWith(".jpg") ) {
+        if ( name.endsWith(fileTypeEnding) ) {
           ret = true
         }
         ret
       }
     }
-    val images = f.listFiles(filter)
-    val folders = f.listFiles()
-    images ++ folders.filter(_.isDirectory).flatMap(recursiveListJPGFiles)
+    val images = folder.listFiles(filter)
+    val folders = folder.listFiles()
+    images ++ folders.filter(_.isDirectory).flatMap( file => recursiveListJPGFiles(file, fileTypeEnding) )
   }
-}
+
+  def getArrayOfSiftDescriptorContainersFromArrayOfFiles( af: Array[File], imageMaxEdgeSize: Float) :
+  Array[Array[SiftDescriptorContainer]] = {
+    val res = af.flatMap( imgFile => {
+      // create a new boofcvWrapper
+      val extractor = new boofcvWrapper()
+      // create a buffered image instance
+      val bfimg: BufferedImage =
+        try {
+          UtilImageIO.loadImage(imgFile.getAbsolutePath)
+        } catch {
+          case e: Exception => {
+            println("Failed to load image file " + imgFile.getAbsolutePath )
+            println(e.getMessage)
+            null
+          }
+        }
+      val descriptors : Array[SiftDescriptorContainer] =
+      // check if we failed to load the image file
+        if (bfimg == null) {
+          new Array[SiftDescriptorContainer](0)
+        } else {
+
+          val imgScaled = rescaleBufferedImage( bfimg, imageMaxEdgeSize )
+
+          val imgf32 : ImageFloat32 = new  ImageFloat32( imgScaled.getWidth(), imgScaled.getHeight())
+          boofcv.core.image.ConvertBufferedImage.convertFrom(imgScaled, imgf32)
+          val imageID : Int =
+            try {
+              // if the image is named only by number it is one of our test images
+              imgFile.getName.substring(0,imgFile.getName.length-4).toInt
+            } catch {
+              // if it is not named by number it is a adhoc image and we give it a random name
+              case e: Exception => new scala.util.Random(System.currentTimeMillis()).nextInt()
+            }
+          // extract the sifts from the image
+          getSiftDescriptorContainerArrayFromImageByteArrays(imageID, extractor.getSIFTDescriptorsAsByteArrays(imgf32))
+        }
+      List(descriptors)
+    })
+    res
+  }
+
+} // end of class

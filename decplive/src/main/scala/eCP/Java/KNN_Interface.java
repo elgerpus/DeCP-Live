@@ -1,6 +1,5 @@
 package eCP.Java;
 
-import com.typesafe.config.ConfigException;
 
 public interface KNN_Interface {
 	

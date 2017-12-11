@@ -52,7 +52,7 @@ object TestSiftExtractionUsingboofcv {
 
     val booflib = new boofcvlib
 
-    val imageFiles = booflib.recursiveListJPGFiles( imagesFolder )
+    val imageFiles = booflib.recursiveListJPGFiles( imagesFolder, ".jpg" )
     println ( "There are " + imageFiles.length + " images in " + args(2) )
 
     val extractResults = booflib.getTimeAndSiftsAsByteArrayFromImageFiles(sc, imageFiles, true, 512)
