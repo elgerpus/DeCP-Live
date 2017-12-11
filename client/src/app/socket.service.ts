@@ -7,6 +7,7 @@ import { UtilitiesService } from "./utilities.service";
 import { IImage } from "./interfaces/iimage";
 import { IEnvelope } from "./interfaces/ienvelope";
 import { IResult } from "./interfaces/iresult";
+import { IResultDetails } from "./interfaces/iresult-details";
 
 @Injectable()
 export class SocketService {
@@ -54,9 +55,40 @@ export class SocketService {
         const observable = new Observable<IEnvelope<IResult>>(observer => {
             this.socket.emit("getResults", page);
             this.socket.on("getResults", envelope => {
-                console.log("GET RESULTS REPLY:");
-
                 const env: IEnvelope<IResult> = {
+                    items: envelope.items,
+                    pagination: envelope.pagination
+                };
+
+                observer.next(env);
+            });
+        });
+
+        return observable;
+    }
+
+    getResultInfo(batchID: string): Observable<IResultDetails> {
+        const observable = new Observable<IResultDetails>(observer => {
+            this.socket.emit("getResultInfo", batchID);
+            this.socket.on("getResultInfo", responseInfo => {
+                console.log("GET RESULT INFO REPLY:");
+
+                console.log(responseInfo);
+
+                observer.next(responseInfo);
+            });
+        });
+
+        return observable;
+    }
+
+    getResultImages(batchID: string, page: number): Observable<IEnvelope<IImage>> {
+        const observable = new Observable<IEnvelope<IImage>>(observer => {
+            this.socket.emit("getResultImages", batchID, page);
+            this.socket.on("getResultImages", envelope => {
+                console.log("GET RESULT IMAGES REPLY:");
+
+                const env: IEnvelope<IImage> = {
                     items: envelope.items,
                     pagination: envelope.pagination
                 };
