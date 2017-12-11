@@ -16,6 +16,11 @@ const IMAGE_PATH = `${__dirname}/images`;
 const PENDING_BATCHES_PATH = `${__dirname}/pending_batches`;
 const READY_BATCHES_PATH = `${__dirname}/ready_batches`;
 const RESULTS_PATH = `${__dirname}/results`;
+const STATUS = {
+    QUEUED: 0,
+    RUNNING: 1,
+    DONE: 2
+};
 
 class Image {
     constructor(imageID, imageString) {
@@ -118,9 +123,6 @@ _io.on("connection", (socket) => {
         // After all images have been converted to a buffer
         Promise.all(promises).then(buffers => {
             for (let i = 0; i < collection.length; i++) {
-                // Split to send only the relative path
-                //const split = collection[i].split(__dirname);
-
                 collection[i] = new Image(collection[i], "data:image/jpg;base64, " + buffers[i].toString("base64"));
             }
 
@@ -203,7 +205,6 @@ _io.on("connection", (socket) => {
 
     // Get results
     socket.on("getResults", (pageNumber) => {
-
         // Read results directory
         fs.readdir(RESULTS_PATH)
             .then(results => {
@@ -224,9 +225,9 @@ _io.on("connection", (socket) => {
                         // Parse the files
                         const items = [];
                         for (let i = 0; i < resultFiles.length; i++) {
-                            const lines = resultFiles[i].toString().split("\n");
+                            const lines = resultFiles[i].toString().split("\n").filter(x => x);
                             const header = lines[0].split(":");
-                            items.push(new Result(header[0], "Done", header[1], header[2], new Date(), lines.length - 1));
+                            items.push(new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length - 1));
                         }
 
                         // Emit to the client
@@ -238,6 +239,67 @@ _io.on("connection", (socket) => {
             })
             .catch(err => {
                 console.log(err);
+            });
+    });
+
+    // Get header info of result
+    socket.on("getResultInfo", batchID => {
+        console.log("Result info for " + batchID);
+
+        fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
+            .then(contents => {
+                // Get lines and strip away empty lines
+                const lines = contents.toString().split("\n").filter(x => x);
+
+                // Get rid of header
+                const header = lines.shift().split(":");
+
+                new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length);
+
+                socket.emit("getResultInfo", new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length));
+            })
+            .catch(() => {
+                socket.emit("getResultInfo", false);
+            });
+    });
+
+    // Get images of a result
+    socket.on("getResultImages", (batchID, pageNumber) => {
+        fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
+            .then(contents => {
+                // Get lines and strip away empty lines
+                const lines = contents.toString().split("\n").filter(x => x);
+                lines.shift();
+
+                // Take a subset for pagination
+                const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+
+                // Resize images and convert to buffer
+                const promises = [];
+                for (let i = 0; i < collection.length; i++) {
+                    console.log(collection[i]);
+                    promises.push(sharp(collection[i]).resize(300).min().toFormat("jpg").toBuffer());
+                }
+
+                // After all images have been converted to a buffer
+                Promise.all(promises)
+                    .then(buffers => {
+                        for (let i = 0; i < collection.length; i++) {
+                            const id = collection[i].split(IMAGE_PATH)[1].substring(1).replace(/\//g, "#");
+                            collection[i] = new Image(id, "data:image/jpg;base64, " + buffers[i].toString("base64"));
+                        }
+
+                        // Send to client
+                        socket.emit("getResultImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        socket.emit("getResultImages", false);
+                    });
+            })
+            .catch((err) => {
+                console.log(err);
+                socket.emit("getResultImages", false);
             });
     });
 
