@@ -29,6 +29,14 @@ class Image {
     }
 }
 
+class ImageResult {
+    constructor(imageID, imageString, votes) {
+        this.imageID = imageID;
+        this.imageString = imageString;
+        this.votes = votes;
+    }
+}
+
 class Result {
     constructor(batchID, status, b, k, timestamp, images) {
         this.batchID = batchID;
@@ -110,7 +118,7 @@ _io.on("connection", (socket) => {
     console.log("User: " + socket.id + " connected!");
 
     // Get query images
-    socket.on("getImages", (pageNumber) => {
+    socket.on("getQueryImages", (pageNumber) => {
         // Get the image paths
         const collection = _.chain(images).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
 
@@ -127,7 +135,7 @@ _io.on("connection", (socket) => {
             }
 
             // Send to client
-            socket.emit("getImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(images.length / PAGE_SIZE))));
+            socket.emit("getQueryImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(images.length / PAGE_SIZE))));
         });
     });
 
@@ -204,7 +212,7 @@ _io.on("connection", (socket) => {
     });
 
     // Get results
-    socket.on("getResults", (pageNumber) => {
+    socket.on("getBatchResults", (pageNumber) => {
         // Read results directory
         fs.readdir(RESULTS_PATH)
             .then(results => {
@@ -231,7 +239,7 @@ _io.on("connection", (socket) => {
                         }
 
                         // Emit to the client
-                        socket.emit("getResults", new Envelope(items, new Pagination(pageNumber, Math.ceil(results.length / PAGE_SIZE))));
+                        socket.emit("getBatchResults", new Envelope(items, new Pagination(pageNumber, Math.ceil(results.length / PAGE_SIZE))));
                     })
                     .catch(err => {
                         console.log(err);
@@ -243,8 +251,8 @@ _io.on("connection", (socket) => {
     });
 
     // Get header info of result
-    socket.on("getResultInfo", batchID => {
-        console.log("Result info for " + batchID);
+    socket.on("getBatchInfo", batchID => {
+        console.log("Batch info for " + batchID);
 
         fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
             .then(contents => {
@@ -256,15 +264,15 @@ _io.on("connection", (socket) => {
 
                 new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length);
 
-                socket.emit("getResultInfo", new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length));
+                socket.emit("getBatchInfo", new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length));
             })
             .catch(() => {
-                socket.emit("getResultInfo", false);
+                socket.emit("getBatchInfo", false);
             });
     });
 
     // Get images of a result
-    socket.on("getResultImages", (batchID, pageNumber) => {
+    socket.on("getBatchImages", (batchID, pageNumber) => {
         fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
             .then(contents => {
                 // Get lines and strip away empty lines
@@ -290,6 +298,61 @@ _io.on("connection", (socket) => {
                         }
 
                         // Send to client
+                        socket.emit("getBatchImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        socket.emit("getBatchImages", false);
+                    });
+            })
+            .catch((err) => {
+                console.log(err);
+                socket.emit("getBatchImages", false);
+            });
+    });
+
+    // Get result image
+    socket.on("getBatchImage", (image) => {
+        console.log("getBatchImage");
+        console.log(image);
+        const path = `${IMAGE_PATH}/${image.replace(/#/g, "/")}`;
+        console.log(path);
+
+        sharp(path).resize(300).min().toFormat("jpg").toBuffer()
+            .then(buffer => {
+                const img = new Image(image, "data:image/jpg;base64, " + buffer.toString("base64"));
+
+                socket.emit("getBatchImage", img);
+            })
+            .catch(() => {
+                socket.emit("getBatchImage", false);
+            });
+    });
+
+    socket.on("getResultImages", (batchID, imageID, pageNumber) => {
+        console.log(`getResultImages: ${RESULTS_PATH}/${batchID}/${imageID}.res`);
+        fs.readFile(`${RESULTS_PATH}/${batchID}/${imageID}.res`)
+            .then(contents => {
+                // Get lines and strip away empty lines
+                const lines = contents.toString().split("\n").filter(x => x);
+                lines.shift();
+
+                const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+
+                const promises = [];
+                const fields = [];
+                for (let i = 0; i < collection.length; i++) {
+                    fields.push(collection[i].split(":"));
+                    promises.push(sharp(fields[i][0]).resize(300).min().toFormat("jpg").toBuffer());
+                }
+
+                Promise.all(promises)
+                    .then(buffers => {
+                        for (let i = 0; i < collection.length; i++) {
+                            const id = fields[i][0].split(IMAGE_PATH)[1].substring(1).replace(/\//g, "#");
+                            collection[i] = new ImageResult(id, "data:image/jpg;base64, " + buffers[i].toString("base64"), fields[i][1]);
+                        }
+
                         socket.emit("getResultImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
                     })
                     .catch(err => {

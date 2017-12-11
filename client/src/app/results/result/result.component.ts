@@ -41,8 +41,8 @@ export class ResultComponent implements OnInit {
 
         this.batchID = this.route.snapshot.params["batchID"];
 
-        this.getResultInfo();
-        this.getResultImages(1);
+        this.getBatchInfo();
+        this.getBatchImages(1);
     }
 
     onResultImageClick(resultImageID: number) {
@@ -51,13 +51,13 @@ export class ResultComponent implements OnInit {
 
     onPage(pagination: IPagination) {
         this.pagination = pagination;
-        this.socketService.removeListener("getResult");
-        this.getResultImages(this.pagination.currentPage);
+        this.socketService.removeListener("getBatchImages");
+        this.getBatchImages(this.pagination.currentPage);
     }
 
-    getResultInfo() {
+    getBatchInfo() {
         this.infoLoaded = false;
-        this.socketService.getResultInfo(this.batchID).first().subscribe(
+        this.socketService.getBatchInfo(this.batchID).first().subscribe(
             info => {
                 this.result = info;
                 this.infoLoaded = true;
@@ -69,9 +69,9 @@ export class ResultComponent implements OnInit {
         );
     }
 
-    getResultImages(page: number) {
+    getBatchImages(page: number) {
         this.loaded = false;
-        this.socketService.getResultImages(this.batchID, page).first().subscribe(
+        this.socketService.getBatchImages(this.batchID, page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
                 this.pageNumbers = [];

@@ -56,7 +56,7 @@ export class ResultsComponent implements OnInit {
 
     getResults(page: number) {
         this.loaded = false;
-        this.socketService.getResults(page).first().subscribe(
+        this.socketService.getBatchResults(page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
                 this.pageNumbers = [];

@@ -8,6 +8,7 @@ import { IImage } from "./interfaces/iimage";
 import { IEnvelope } from "./interfaces/ienvelope";
 import { IResult } from "./interfaces/iresult";
 import { IResultDetails } from "./interfaces/iresult-details";
+import { IImageResult } from "./interfaces/iimage-result";
 
 @Injectable()
 export class SocketService {
@@ -24,10 +25,8 @@ export class SocketService {
 
     getQueryImages(page: number): Observable<IEnvelope<IImage>> {
         const observable = new Observable<IEnvelope<IImage>>(observer => {
-            this.socket.emit("getImages", page);
-            this.socket.on("getImages", envelope => {
-                console.log("GET IMAGES REPLY:");
-                console.log(envelope);
+            this.socket.emit("getQueryImages", page);
+            this.socket.on("getQueryImages", envelope => {
                 const env: IEnvelope<IImage> = {
                     items: envelope.items,
                     pagination: envelope.pagination
@@ -51,10 +50,10 @@ export class SocketService {
         return observable;
     }
 
-    getResults(page: number): Observable<IEnvelope<IResult>> {
+    getBatchResults(page: number): Observable<IEnvelope<IResult>> {
         const observable = new Observable<IEnvelope<IResult>>(observer => {
-            this.socket.emit("getResults", page);
-            this.socket.on("getResults", envelope => {
+            this.socket.emit("getBatchResults", page);
+            this.socket.on("getBatchResults", envelope => {
                 const env: IEnvelope<IResult> = {
                     items: envelope.items,
                     pagination: envelope.pagination
@@ -67,14 +66,10 @@ export class SocketService {
         return observable;
     }
 
-    getResultInfo(batchID: string): Observable<IResultDetails> {
+    getBatchInfo(batchID: string): Observable<IResultDetails> {
         const observable = new Observable<IResultDetails>(observer => {
-            this.socket.emit("getResultInfo", batchID);
-            this.socket.on("getResultInfo", responseInfo => {
-                console.log("GET RESULT INFO REPLY:");
-
-                console.log(responseInfo);
-
+            this.socket.emit("getBatchInfo", batchID);
+            this.socket.on("getBatchInfo", responseInfo => {
                 observer.next(responseInfo);
             });
         });
@@ -82,18 +77,41 @@ export class SocketService {
         return observable;
     }
 
-    getResultImages(batchID: string, page: number): Observable<IEnvelope<IImage>> {
+    getBatchImages(batchID: string, page: number): Observable<IEnvelope<IImage>> {
         const observable = new Observable<IEnvelope<IImage>>(observer => {
-            this.socket.emit("getResultImages", batchID, page);
-            this.socket.on("getResultImages", envelope => {
-                console.log("GET RESULT IMAGES REPLY:");
-
+            this.socket.emit("getBatchImages", batchID, page);
+            this.socket.on("getBatchImages", envelope => {
                 const env: IEnvelope<IImage> = {
                     items: envelope.items,
                     pagination: envelope.pagination
                 };
 
-                console.log(env);
+                observer.next(env);
+            });
+        });
+
+        return observable;
+    }
+
+    getBatchImage(image: string): Observable<IImage> {
+        const observable = new Observable<IImage>(observer => {
+            this.socket.emit("getBatchImage", image);
+            this.socket.on("getBatchImage", img => {
+                observer.next(img);
+            });
+        });
+
+        return observable;
+    }
+
+    getResultImages(batchID: string, imageID: string, page: number): Observable<IEnvelope<IImageResult>> {
+        const observable = new Observable<IEnvelope<IImageResult>>(observer => {
+            this.socket.emit("getResultImages", batchID, imageID, page);
+            this.socket.on("getResultImages", envelope => {
+                const env: IEnvelope<IImageResult> = {
+                    items: envelope.items,
+                    pagination: envelope.pagination
+                };
 
                 observer.next(env);
             });
