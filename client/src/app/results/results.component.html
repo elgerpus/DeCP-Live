@@ -22,33 +22,46 @@
             </div>
         </mz-card-title>
         <mz-card-content>
-            <div class="row scrollable">
-                <div class="col s12">
-                    <table class="responsive-table striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Status</th>
-                                <th>Timestamp</th>
-                                <th>Images</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <tr *ngFor="let result of pages[pagination.currentPage-1]" [routerLink]="['/results/', 1]">
-                                <td>{{ result.ID }}</td>
-                                <td>{{ result.status }}</td>
-                                <td>{{ result.timestamp }}</td>
-                                <td>{{ result.images }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div *ngIf="!loaded" class="row">
+                <div class="col s12 center">
+                    <mz-spinner [color]="'blue'" [size]="'big'">
+                    </mz-spinner>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col s12 center">
-                    <app-pagination [pagination]="pagination" [pageNumbers]="pageNumbers" (onPage)="onPage($event)"></app-pagination>
+            <div *ngIf="loaded">
+                <div class="row scrollable">
+                    <div class="col s12">
+                        <table class="responsive-table striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>B</th>
+                                    <th>K</th>
+                                    <th>Images</th>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr *ngFor="let result of results" [routerLink]="['/results/', result.batchID]">
+                                    <td>{{ result.batchID }}</td>
+                                    <td>{{ result.b }}</td>
+                                    <td>{{ result.k }}</td>
+                                    <td>{{ result.images }}</td>
+                                    <td>{{ result.timestamp }}</td>
+                                    <td>{{ result.status }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 center">
+                        <app-pagination [pagination]="pagination" [pageNumbers]="pageNumbers" (onPage)="onPage($event)"></app-pagination>
+                    </div>
                 </div>
             </div>
         </mz-card-content>

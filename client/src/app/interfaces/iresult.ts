@@ -1,6 +1,8 @@
 export interface IResult {
-    ID: string;
+    batchID: string;
     status: string;
+    b: string;
+    k: string;
     timestamp: string;
     images: number;
 }
