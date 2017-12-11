@@ -3,9 +3,7 @@ package pipelines
 import eCP.Java.{DeCPDyTree, SiftDescriptorContainer, SiftKnnContainer, eCPALTree}
 import extLibrary.boofcvlib
 import java.io._
-import java.time.temporal.TemporalUnit
 import java.time.{Duration, Instant}
-import javax.print.attribute.standard.Destination
 
 import org.apache.hadoop.io.IntWritable
 import org.apache.spark.{SparkConf, SparkContext}
