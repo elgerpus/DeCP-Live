@@ -189,4 +189,5 @@ typings/
 
 # Custom
 yarn.lock
+server/src/pending_batches/*
 server/src/images/1holidays/*

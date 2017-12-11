@@ -1,7 +1,7 @@
 import express from "express";
 import http from "http";
 import io from "socket.io";
-import fs from "fs";
+import fs from "fs-extra";
 import _ from "lodash";
 import sharp from "sharp";
 // import uuidv4 from "uuid/v4";
