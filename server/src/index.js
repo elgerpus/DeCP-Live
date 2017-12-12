@@ -4,7 +4,10 @@ import io from "socket.io";
 import fs from "fs-extra";
 import _ from "lodash";
 import sharp from "sharp";
-// import uuidv4 from "uuid/v4";
+import {
+    unescape
+}
+from "querystring";
 
 const _app = express();
 const _http = http.Server(_app);
@@ -38,12 +41,13 @@ class ImageResult {
 }
 
 class Result {
-    constructor(batchID, status, b, k, timestamp, images) {
+    constructor(batchID, status, b, k, totalTime, timePerImage, images) {
         this.batchID = batchID;
         this.status = status;
         this.b = b;
         this.k = k;
-        this.timestamp = timestamp;
+        this.totalTime = totalTime;
+        this.timePerImage = timePerImage;
         this.images = images;
     }
 }
@@ -194,7 +198,8 @@ _io.on("connection", (socket) => {
             }
 
             // Construct file contents
-            contents = b + ":" + k + ":" + n + ":\n" + paths + "\n";
+            const id = new Date();
+            contents = id + "\n" + b + ":" + k + ":" + n + ":\n" + paths + "\n";
 
             // Write contents to the file (overwrite)
             fs.writeFile(filepath, contents, err => {
@@ -212,11 +217,11 @@ _io.on("connection", (socket) => {
 
     // Get results
     socket.on("getBatchResults", (pageNumber) => {
-        // Read results directory
-        fs.readdir(RESULTS_PATH)
-            .then(results => {
+        // Read queued directory
+        fs.readdir(PENDING_BATCHES_PATH)
+            .then(pending_batches => {
                 // Only list directories, not files
-                const dirs = results.filter(f => fs.statSync(`${RESULTS_PATH}/${f}`).isDirectory());
+                const dirs = pending_batches.filter(f => fs.statSync(`${PENDING_BATCHES_PATH}/${f}`).isDirectory());
 
                 // Take a subset for pagination
                 const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -224,21 +229,61 @@ _io.on("connection", (socket) => {
                 // Read the batch.res files
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
-                    promises.push(fs.readFile(`${RESULTS_PATH}/${collection[i]}/batch.res`));
+                    promises.push(fs.readFile(`${PENDING_BATCHES_PATH}/${collection[i]}/batch.res`));
                 }
 
                 Promise.all(promises)
                     .then(resultFiles => {
                         // Parse the files
-                        const items = [];
+                        let items = [];
                         for (let i = 0; i < resultFiles.length; i++) {
                             const lines = resultFiles[i].toString().split("\n").filter(x => x);
+                            const id = lines.shift();
                             const header = lines[0].split(":");
-                            items.push(new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length - 1));
+                            items.push(new Result(id, STATUS.QUEUED, header[0], header[1], undefined, undefined, lines.length - 1));
                         }
 
-                        // Emit to the client
-                        socket.emit("getBatchResults", new Envelope(items, new Pagination(pageNumber, Math.ceil(results.length / PAGE_SIZE))));
+                        if (items.length !== PAGE_SIZE) {
+                            // Read results directory
+                            fs.readdir(RESULTS_PATH)
+                                .then(results => {
+                                    // Only list directories, not files
+                                    const dirs = results.filter(f => fs.statSync(`${RESULTS_PATH}/${f}`).isDirectory());
+
+                                    // Take a subset for pagination
+                                    const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+
+                                    // Read the batch.res files
+                                    const promises = [];
+                                    for (let i = 0; i < collection.length; i++) {
+                                        promises.push(fs.readFile(`${RESULTS_PATH}/${collection[i]}/batch.res`));
+                                    }
+
+                                    Promise.all(promises)
+                                        .then(resultFiles => {
+                                            // Parse the files
+                                            for (let i = 0; i < resultFiles.length; i++) {
+                                                const lines = resultFiles[i].toString().split("\n").filter(x => x);
+                                                const id = lines.shift();
+                                                const header = lines.shift().split(":");
+                                                items.push(new Result(id, STATUS.DONE, header[0], header[1], header[3], header[3] / lines.length, lines.length));
+                                            }
+
+                                            items = items.splice(0, 16);
+
+                                            const numberOfPages = Math.ceil((pending_batches.length + results.length) / PAGE_SIZE);
+
+                                            // Emit to the client
+                                            socket.emit("getBatchResults", new Envelope(items, new Pagination(pageNumber, numberOfPages)));
+                                        })
+                                        .catch(err => {
+                                            console.log(err);
+                                        });
+                                })
+                                .catch(err => {
+                                    console.log(err);
+                                });
+                        }
                     })
                     .catch(err => {
                         console.log(err);
@@ -253,20 +298,36 @@ _io.on("connection", (socket) => {
     socket.on("getBatchInfo", batchID => {
         console.log("Batch info for " + batchID);
 
-        fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
+        fs.readFile(`${PENDING_BATCHES_PATH}/${batchID}/batch.res`)
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
 
+                // Get the ID
+                const id = lines.shift();
+
                 // Get rid of header
                 const header = lines.shift().split(":");
 
-                new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length);
-
-                socket.emit("getBatchInfo", new Result(header[0], STATUS.DONE, header[1], header[2], new Date(), lines.length));
+                socket.emit("getBatchInfo", new Result(id, STATUS.DONE, header[1], header[2], undefined, undefined, lines.length));
             })
             .catch(() => {
-                socket.emit("getBatchInfo", false);
+                fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
+                    .then(contents => {
+                        // Get lines and strip away empty lines
+                        const lines = contents.toString().split("\n").filter(x => x);
+
+                        // Get the ID
+                        const id = lines.shift();
+
+                        // Get rid of header
+                        const header = lines.shift().split(":");
+
+                        socket.emit("getBatchInfo", new Result(id, STATUS.DONE, header[1], header[2], header[3], header[3] / lines.length, lines.length));
+                    })
+                    .catch(() => {
+                        socket.emit("getBatchInfo", false);
+                    });
             });
     });
 
@@ -276,7 +337,7 @@ _io.on("connection", (socket) => {
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
-                lines.shift();
+                lines.splice(0, 2);
 
                 // Take a subset for pagination
                 const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -309,29 +370,29 @@ _io.on("connection", (socket) => {
             });
     });
 
-    // Get images of a result
+    // Get top result images for a batch image
     socket.on("getBatchImagesTopResults", (batchID, pageNumber, top) => {
         fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
-                lines.shift();
+                lines.splice(0, 2);
 
                 // Take a subset for pagination
                 const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
 
-                // Resize images and convert to buffer
+                // For each batch query image on the page, read their result file
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
                     const filename = collection[i].split(IMAGE_PATH)[1].substr(1).replace(/\//g, "#");
                     const path = `${RESULTS_PATH}/${batchID}/${filename}.res`;
-                    console.log(`READING: ${path}`);
                     promises.push(fs.readFile(path));
                 }
 
-                // After all images have been converted to a buffer
+                // After all result files have been read
                 Promise.all(promises)
                     .then(contents => {
+                        // For each result file, get the top image results
                         let images = [];
                         for (let i = 0; i < contents.length; i++) {
                             // Get lines and strip away empty lines
@@ -340,6 +401,7 @@ _io.on("connection", (socket) => {
                             images[i] = _.chain(lines).take(top).value();
                         }
 
+                        // Resize the image results
                         const resizePromises = [];
                         for (let i = 0; i < images.length; i++) {
                             for (let j = 0; j < images[i].length; j++) {
@@ -349,6 +411,7 @@ _io.on("connection", (socket) => {
 
                         Promise.all(resizePromises)
                             .then(buffers => {
+                                // Resize images
                                 images = [];
                                 for (let i = 0; i < buffers.length; i += 5) {
                                     const arr = [];
@@ -359,6 +422,7 @@ _io.on("connection", (socket) => {
                                     images.push(arr);
                                 }
 
+                                // Emit to client
                                 socket.emit("getBatchImagesTopResults", images);
                             })
                             .catch(err => {
@@ -377,12 +441,9 @@ _io.on("connection", (socket) => {
             });
     });
 
-    // Get result image
+    // Get batch image
     socket.on("getBatchImage", (image) => {
-        console.log("getBatchImage");
-        console.log(image);
         const path = `${IMAGE_PATH}/${image.replace(/#/g, "/")}`;
-        console.log(path);
 
         sharp(path).resize(300).min().toFormat("jpg").toBuffer()
             .then(buffer => {
@@ -395,6 +456,7 @@ _io.on("connection", (socket) => {
             });
     });
 
+    // Get result images
     socket.on("getResultImages", (batchID, imageID, pageNumber) => {
         fs.readFile(`${RESULTS_PATH}/${batchID}/${imageID}.res`)
             .then(contents => {
@@ -402,8 +464,10 @@ _io.on("connection", (socket) => {
                 const lines = contents.toString().split("\n").filter(x => x);
                 lines.shift();
 
+                // Get a subset of the result images
                 const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
 
+                // Resize the images
                 const promises = [];
                 const fields = [];
                 for (let i = 0; i < collection.length; i++) {
@@ -413,11 +477,13 @@ _io.on("connection", (socket) => {
 
                 Promise.all(promises)
                     .then(buffers => {
+                        // Construct the image result return array
                         for (let i = 0; i < collection.length; i++) {
                             const id = fields[i][0].split(IMAGE_PATH)[1].substring(1).replace(/\//g, "#");
                             collection[i] = new ImageResult(id, "data:image/jpg;base64, " + buffers[i].toString("base64"), fields[i][1]);
                         }
 
+                        // Emit to client
                         socket.emit("getResultImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
                     })
                     .catch(err => {

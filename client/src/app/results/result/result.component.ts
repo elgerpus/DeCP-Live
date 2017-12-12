@@ -25,10 +25,11 @@ export class ResultComponent implements OnInit {
     imagesTop: IImage[][];
     pageNumbers: number[];
     pagination: IPagination;
-    loaded = false;
+    gridLoaded = false;
+    tableLoaded = false;
     topLoaded = false;
     infoLoaded = false;
-    grid = true;
+    grid = false;
 
     constructor(
         public utilities: UtilitiesService,
@@ -74,7 +75,8 @@ export class ResultComponent implements OnInit {
     }
 
     getBatchImages(page: number) {
-        this.loaded = false;
+        this.gridLoaded = false;
+        this.tableLoaded = false;
         this.socketService.getBatchImages(this.batchID, page).first().subscribe(
             envelope => {
                 this.pagination = envelope.pagination;
@@ -103,7 +105,8 @@ export class ResultComponent implements OnInit {
                     }
                 }
 
-                this.loaded = true;
+                this.gridLoaded = true;
+                this.tableLoaded = true;
             },
             error => {
                 this.toastService.show("Unknown error!", 4000);

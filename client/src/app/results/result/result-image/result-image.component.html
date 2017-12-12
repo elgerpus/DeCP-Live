@@ -1,7 +1,7 @@
 <div class="container">
     <div class="row">
         <div class="col s12">
-            <h2>Result - {{ batchID }} | Image - {{ imageID }}</h2>
+            <h2>Result - {{ batchID }}</h2>
         </div>
     </div>
 
@@ -9,7 +9,7 @@
         <mz-card-title>
             <div class="row">
                 <div class="col s12">
-                    Query image
+                    Query image: {{ displayImageID }}
                 </div>
             </div>
         </mz-card-title>
@@ -19,11 +19,6 @@
                     <div class="overlay-container">
                         <img [src]="domSanitizer.bypassSecurityTrustUrl(batchImage.imageString)">
                         <div class="overlay">
-                            <div class="row">
-                                <div class="col s12">
-                                    <span>ID: {{ batchImage.imageID }}</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

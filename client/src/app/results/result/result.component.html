@@ -49,13 +49,27 @@
         <!-- Done -->
         <div *ngIf="result.status === 2">
             <div class="row">
-                <div class="col s6">
-                    <mz-switch-container>
-                        <input mz-switch id="mine-all" [off]="'All'" [on]="'Mine'" type="checkbox">
-                    </mz-switch-container>
+                <div class="col s12">
+                    <blockquote class="full-width flow-text">
+                        <table>
+                            <thead>
+                                <th>B</th>
+                                <th>K</th>
+                                <th>Total time</th>
+                                <th>Time per image</th>
+                            </thead>
+                            <tbody>
+                                <td>{{ result.b }}</td>
+                                <td>{{ result.k }}</td>
+                                <td>{{ result.totalTime }}s</td>
+                                <td>{{ result.timePerImage }}s</td>
+                            </tbody>
+                        </table>
+                    </blockquote>
                 </div>
-
-                <div class="col s6">
+            </div>
+            <div class="row">
+                <div class="col s6 offset-s6">
                     <mz-switch-container class="right">
                         <input mz-switch id="grid-rows" [off]="'Rows'" [on]="'Grid'" type="checkbox" [(ngModel)]="grid">
                     </mz-switch-container>
@@ -71,15 +85,15 @@
                     </div>
                 </mz-card-title>
                 <mz-card-content>
-                    <div *ngIf="!loaded" class="row">
+                    <div *ngIf="!gridLoaded && !tableLoaded" class="row">
                         <div class="col s12 center">
                             <mz-spinner [color]="'blue'" [size]="'big'">
                             </mz-spinner>
                         </div>
                     </div>
 
-                    <div *ngIf="loaded">
-                        <div *ngIf="grid">
+                    <div *ngIf="gridLoaded || tableLoaded">
+                        <div *ngIf="grid && gridLoaded">
                             <div *ngFor="let imageSet of imagesGrid; let i = index" class="table-row row">
                                 <div *ngFor="let image of imageSet" class="col s3">
                                     <div class="overlay-container hoverable" [routerLink]="[image.imageID]">
@@ -96,9 +110,9 @@
                             </div>
                         </div>
 
-                        <div *ngIf="!grid" class="row scrollable">
+                        <div *ngIf="!grid && tableLoaded && topLoaded" class="row scrollable">
                             <div class="col s12">
-                                <table class="responsive-table striped">
+                                <table class="responsive-table centered striped">
                                     <thead>
                                         <tr>
                                             <th>Image</th>

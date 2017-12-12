@@ -1,6 +1,7 @@
 import { Component, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { MzToastService } from "ng2-materialize";
+import * as moment from "moment";
 
 import { UtilitiesService } from "./../utilities.service";
 import { SocketService } from "../socket.service";
@@ -68,6 +69,10 @@ export class ResultsComponent implements OnInit {
                 }
 
                 this.results = envelope.items;
+
+                for (let i = 0; i < this.results.length; i++) {
+                    this.results[i].timestamp = moment(this.results[i].timestamp).format("YYYY-MM-DD HH:mm:ss");
+                }
 
                 this.loaded = true;
             },
