@@ -49,7 +49,7 @@
                 <div *ngIf="grid">
                     <div *ngFor="let imageSet of imagesGrid; let i = index" class="table-row row">
                         <div *ngFor="let image of imageSet" class="col s3">
-                            <div class="overlay-container hoverable" [routerLink]="[image.imageID]">
+                            <div class="overlay-container hoverable">
                                 <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
                                 <div class="overlay">
                                     <div class="row truncate">
@@ -80,10 +80,10 @@
                             </thead>
 
                             <tbody>
-                                <tr *ngFor="let image of imagesTable" [routerLink]="[1]">
-                                    <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
+                                <tr *ngFor="let image of imagesTable">
+                                    <td><img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)"></td>
                                     <td>29</td>
-                                    <td>{{ utilities.getImageID(image) }}</td>
+                                    <td>{{ utilities.getImageID(image.imageID) }}</td>
                                 </tr>
                             </tbody>
                         </table>
