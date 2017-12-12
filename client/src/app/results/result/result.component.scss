@@ -6,6 +6,14 @@ img {
     display: block;
 }
 
+// Info table
+blockquote {
+    td, th {
+        text-align: center;
+    }
+}
+
+// Image table
 tbody>tr {
     cursor: pointer;
     &:hover {
@@ -14,6 +22,9 @@ tbody>tr {
 
     img {
         max-height: 3em;
-        margin: 0;
     }
+}
+
+td, th {
+    max-width: 0;
 }

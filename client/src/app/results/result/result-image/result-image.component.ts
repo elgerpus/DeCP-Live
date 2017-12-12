@@ -18,6 +18,7 @@ export class ResultImageComponent implements OnInit {
 
     batchID: string;
     imageID: string;
+    displayImageID: string;
     batchImage: IImage;
     imagesGrid: IImage[][];
     imagesTable: IImage[];
@@ -39,6 +40,7 @@ export class ResultImageComponent implements OnInit {
     ngOnInit() {
         this.batchID = this.route.snapshot.params["batchID"];
         this.imageID = this.route.snapshot.params["imageID"];
+        this.displayImageID = this.imageID.replace(/#/g, "/");
 
         this.getBatchImage();
         this.getResultImages(1);

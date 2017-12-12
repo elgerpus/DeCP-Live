@@ -6,6 +6,8 @@ export interface IResultDetails {
     averageTime: number;
     b: number;
     k: number;
+    totalTime: number;
+    timePerImage: number;
     timestamp: string;
     images: number;
 }
