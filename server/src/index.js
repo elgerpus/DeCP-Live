@@ -81,7 +81,6 @@ const builder = path => {
     }
     catch (err) {
         if (!path.includes(".DS_Store")) {
-            console.log("Added: " + path);
             images.push(path);
         }
     }
@@ -285,7 +284,6 @@ _io.on("connection", (socket) => {
                 // Resize images and convert to buffer
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
-                    console.log(collection[i]);
                     promises.push(sharp(collection[i]).resize(300).min().toFormat("jpg").toBuffer());
                 }
 
@@ -311,6 +309,74 @@ _io.on("connection", (socket) => {
             });
     });
 
+    // Get images of a result
+    socket.on("getBatchImagesTopResults", (batchID, pageNumber, top) => {
+        fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
+            .then(contents => {
+                // Get lines and strip away empty lines
+                const lines = contents.toString().split("\n").filter(x => x);
+                lines.shift();
+
+                // Take a subset for pagination
+                const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+
+                // Resize images and convert to buffer
+                const promises = [];
+                for (let i = 0; i < collection.length; i++) {
+                    const filename = collection[i].split(IMAGE_PATH)[1].substr(1).replace(/\//g, "#");
+                    const path = `${RESULTS_PATH}/${batchID}/${filename}.res`;
+                    console.log(`READING: ${path}`);
+                    promises.push(fs.readFile(path));
+                }
+
+                // After all images have been converted to a buffer
+                Promise.all(promises)
+                    .then(contents => {
+                        let images = [];
+                        for (let i = 0; i < contents.length; i++) {
+                            // Get lines and strip away empty lines
+                            const lines = contents[i].toString().split("\n").filter(x => x);
+                            lines.shift();
+                            images[i] = _.chain(lines).take(top).value();
+                        }
+
+                        const resizePromises = [];
+                        for (let i = 0; i < images.length; i++) {
+                            for (let j = 0; j < images[i].length; j++) {
+                                resizePromises.push(sharp(images[i][j].split(":")[0]).resize(300).min().toFormat("jpg").toBuffer());
+                            }
+                        }
+
+                        Promise.all(resizePromises)
+                            .then(buffers => {
+                                images = [];
+                                for (let i = 0; i < buffers.length; i += 5) {
+                                    const arr = [];
+                                    for (let j = 0; j < 5; j++) {
+                                        arr.push(new Image("", "data:image/jpg;base64, " + buffers[j].toString("base64")));
+                                    }
+
+                                    images.push(arr);
+                                }
+
+                                socket.emit("getBatchImagesTopResults", images);
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                socket.emit("getBatchImagesTopResults", false);
+                            });
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                        socket.emit("getBatchImagesTopResults", false);
+                    });
+            })
+            .catch((err) => {
+                console.log(err);
+                socket.emit("getBatchImagesTopResults", false);
+            });
+    });
+
     // Get result image
     socket.on("getBatchImage", (image) => {
         console.log("getBatchImage");
@@ -330,7 +396,6 @@ _io.on("connection", (socket) => {
     });
 
     socket.on("getResultImages", (batchID, imageID, pageNumber) => {
-        console.log(`getResultImages: ${RESULTS_PATH}/${batchID}/${imageID}.res`);
         fs.readFile(`${RESULTS_PATH}/${batchID}/${imageID}.res`)
             .then(contents => {
                 // Get lines and strip away empty lines
