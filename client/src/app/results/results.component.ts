@@ -74,6 +74,8 @@ export class ResultsComponent implements OnInit {
                     this.results[i].timestamp = moment(this.results[i].timestamp).format("YYYY-MM-DD HH:mm:ss");
                 }
 
+                console.log(envelope);
+
                 this.loaded = true;
             },
             error => {

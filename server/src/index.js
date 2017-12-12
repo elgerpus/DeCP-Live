@@ -153,7 +153,8 @@ _io.on("connection", (socket) => {
         }
 
         // File path to pending batch file
-        const filepath = PENDING_BATCHES_PATH + "/" + b + "." + k;
+        const id = new Date().valueOf();
+        const filepath = PENDING_BATCHES_PATH + "/" + id;
 
         // Create file if not exists
         if (!fs.existsSync(filepath)) {
@@ -198,8 +199,7 @@ _io.on("connection", (socket) => {
             }
 
             // Construct file contents
-            const id = new Date();
-            contents = id + "\n" + b + ":" + k + ":" + n + ":\n" + paths + "\n";
+            contents = b + ":" + k + ":" + n + ":\n" + paths + "\n";
 
             // Write contents to the file (overwrite)
             fs.writeFile(filepath, contents, err => {
@@ -220,16 +220,16 @@ _io.on("connection", (socket) => {
         // Read queued directory
         fs.readdir(PENDING_BATCHES_PATH)
             .then(pending_batches => {
-                // Only list directories, not files
-                const dirs = pending_batches.filter(f => fs.statSync(`${PENDING_BATCHES_PATH}/${f}`).isDirectory());
+                // Only list files, not directories
+                const files = pending_batches.filter(f => fs.statSync(`${PENDING_BATCHES_PATH}/${f}`).isFile());
 
                 // Take a subset for pagination
-                const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+                const collection = _.chain(files).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
 
                 // Read the batch.res files
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
-                    promises.push(fs.readFile(`${PENDING_BATCHES_PATH}/${collection[i]}/batch.res`));
+                    promises.push(fs.readFile(`${PENDING_BATCHES_PATH}/${collection[i]}`));
                 }
 
                 Promise.all(promises)
@@ -238,9 +238,9 @@ _io.on("connection", (socket) => {
                         let items = [];
                         for (let i = 0; i < resultFiles.length; i++) {
                             const lines = resultFiles[i].toString().split("\n").filter(x => x);
-                            const id = lines.shift();
+                            const id = collection[i];
                             const header = lines[0].split(":");
-                            items.push(new Result(id, STATUS.QUEUED, header[0], header[1], undefined, undefined, lines.length - 1));
+                            items.push(new Result(id, STATUS.QUEUED, header[0], header[1], 0, 0, lines.length - 1));
                         }
 
                         if (items.length !== PAGE_SIZE) {
@@ -264,7 +264,7 @@ _io.on("connection", (socket) => {
                                             // Parse the files
                                             for (let i = 0; i < resultFiles.length; i++) {
                                                 const lines = resultFiles[i].toString().split("\n").filter(x => x);
-                                                const id = lines.shift();
+                                                const id = collection[i];
                                                 const header = lines.shift().split(":");
                                                 items.push(new Result(id, STATUS.DONE, header[0], header[1], header[3], header[3] / lines.length, lines.length));
                                             }
@@ -303,13 +303,10 @@ _io.on("connection", (socket) => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
 
-                // Get the ID
-                const id = lines.shift();
-
                 // Get rid of header
                 const header = lines.shift().split(":");
 
-                socket.emit("getBatchInfo", new Result(id, STATUS.DONE, header[1], header[2], undefined, undefined, lines.length));
+                socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], undefined, undefined, lines.length));
             })
             .catch(() => {
                 fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
@@ -317,13 +314,10 @@ _io.on("connection", (socket) => {
                         // Get lines and strip away empty lines
                         const lines = contents.toString().split("\n").filter(x => x);
 
-                        // Get the ID
-                        const id = lines.shift();
-
                         // Get rid of header
                         const header = lines.shift().split(":");
 
-                        socket.emit("getBatchInfo", new Result(id, STATUS.DONE, header[1], header[2], header[3], header[3] / lines.length, lines.length));
+                        socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], header[3], header[3] / lines.length, lines.length));
                     })
                     .catch(() => {
                         socket.emit("getBatchInfo", false);
