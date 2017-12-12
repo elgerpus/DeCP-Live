@@ -22,9 +22,11 @@ export class ResultComponent implements OnInit {
     result: IResultDetails;
     imagesGrid: IImage[][];
     imagesTable: IImage[];
+    imagesTop: IImage[][];
     pageNumbers: number[];
     pagination: IPagination;
     loaded = false;
+    topLoaded = false;
     infoLoaded = false;
     grid = true;
 
@@ -43,6 +45,7 @@ export class ResultComponent implements OnInit {
 
         this.getBatchInfo();
         this.getBatchImages(1);
+        this.getTopImages(1);
     }
 
     onResultImageClick(resultImageID: number) {
@@ -52,6 +55,7 @@ export class ResultComponent implements OnInit {
     onPage(pagination: IPagination) {
         this.pagination = pagination;
         this.socketService.removeListener("getBatchImages");
+        this.getTopImages(this.pagination.currentPage);
         this.getBatchImages(this.pagination.currentPage);
     }
 
@@ -100,6 +104,20 @@ export class ResultComponent implements OnInit {
                 }
 
                 this.loaded = true;
+            },
+            error => {
+                this.toastService.show("Unknown error!", 4000);
+                console.log(error);
+            }
+        );
+    }
+
+    getTopImages(page: number) {
+        this.topLoaded = false;
+        this.socketService.getBatchImagesTopResults(this.batchID, page, this.utilities.TOP_IMAGES).first().subscribe(
+            images => {
+                this.imagesTop = images;
+                this.topLoaded = true;
             },
             error => {
                 this.toastService.show("Unknown error!", 4000);

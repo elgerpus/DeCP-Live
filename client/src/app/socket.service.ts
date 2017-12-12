@@ -119,4 +119,15 @@ export class SocketService {
 
         return observable;
     }
+
+    getBatchImagesTopResults(batchID: string, page: number, top: number): Observable<IImage[][]> {
+        const observable = new Observable<IImage[][]>(observer => {
+            this.socket.emit("getBatchImagesTopResults", batchID, page, top);
+            this.socket.on("getBatchImagesTopResults", images => {
+                observer.next(images);
+            });
+        });
+
+        return observable;
+    }
 }

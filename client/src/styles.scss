@@ -109,3 +109,7 @@ main {
         float: none;
     }
 }
+
+td, th {
+    max-width: 0;
+}

@@ -103,13 +103,23 @@
                                         <tr>
                                             <th>Image</th>
                                             <th>ID</th>
+                                            <th>Top results</th>
+                                            <th></th>
+                                            <th></th>
+                                            <th></th>
+                                            <th></th>
                                         </tr>
                                     </thead>
 
                                     <tbody>
                                         <tr *ngFor="let image of imagesTable; let i = index" [routerLink]="[image.imageID]">
                                             <td><img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)"></td>
-                                            <td>{{ utilities.getImageID(image.imageID) }}</td>
+                                            <td><span class="truncate">{{ utilities.getImageID(image.imageID) }}</span></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][0].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][1].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][2].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][3].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][4].imageString)"></td>
                                         </tr>
                                     </tbody>
                                 </table>
