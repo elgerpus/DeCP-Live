@@ -30,19 +30,6 @@ export class ResultsComponent implements OnInit {
 
     ngOnInit() {
         this.getResults(1);
-
-        // this.pagination = {
-        //     currentPage: 1,
-        //     numberOfPages: 4
-        // };
-
-        // for (let i = 0; i < this.pagination.numberOfPages; i++) {
-        //     this.pages[i] = [];
-        // }
-
-        // this.pages[0].push({ ID: "1", status: "Queued", timestamp: "-", images: 7493 });
-        // this.pages[0].push({ ID: "2", status: "Running", timestamp: "Monday, 04-Dec-17 15:35:54 UTC", images: 53729 });
-        // this.pages[0].push({ ID: "3", status: "Done", timestamp: "Monday, 04-Dec-17 14:26:05", images: 36485 });
     }
 
     onResultClick(resultID: string) {
@@ -71,10 +58,15 @@ export class ResultsComponent implements OnInit {
                 this.results = envelope.items;
 
                 for (let i = 0; i < this.results.length; i++) {
-                    this.results[i].timestamp = moment(this.results[i].timestamp).format("YYYY-MM-DD HH:mm:ss");
+                    const time = parseInt(this.results[i].batchID, 10);
+                    const date = moment(time);
+                    if (date.isValid()) {
+                        this.results[i].timestamp = date.format("YYYY-MM-DD HH:mm:ss");
+                    }
+                    else {
+                        this.results[i].timestamp = "Invalid date";
+                    }
                 }
-
-                console.log(envelope);
 
                 this.loaded = true;
             },
