@@ -8,6 +8,11 @@ export class UtilitiesService {
     SERVER_URL = "http://localhost:32000/";
     PAGINATION_OFFSET = 3;
     TOP_IMAGES = 5;
+    DEFAULT_B = 1;
+    DEFAULT_K = 20;
+    DEFAULT_TOP = 100;
+    SELECT_ALL_TEXT = "Select all on page";
+    DESELECT_ALL_TEXT = "Deselect all on page";
 
     constructor() { }
 
