@@ -79,6 +79,10 @@ export class ResultComponent implements OnInit {
         this.tableLoaded = false;
         this.socketService.getBatchImages(this.batchID, page).first().subscribe(
             envelope => {
+                if (envelope.pagination === undefined) {
+                    return;
+                }
+
                 this.pagination = envelope.pagination;
                 this.pageNumbers = [];
                 this.imagesGrid = [];
