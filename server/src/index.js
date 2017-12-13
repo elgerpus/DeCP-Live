@@ -213,9 +213,7 @@ _io.on("connection", (socket) => {
                             items.push(new Result(id, STATUS.QUEUED, header[0], header[1], 0, 0, lines.length - 1));
                         }
 
-                        items.sort((a, b) => {
-                            return parseInt(b.batchID) < parseInt(a.batchID);
-                        });
+                        items = _.sortBy(items, ["id"]);
 
                         if (items.length !== PAGE_SIZE) {
                             // Read results directory
@@ -244,9 +242,7 @@ _io.on("connection", (socket) => {
                                                 doneItems.push(new Result(id, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
                                             }
 
-                                            doneItems.sort((a, b) => {
-                                                return parseInt(a.batchID) < parseInt(b.batchID);
-                                            });
+                                            doneItems = _.sortBy(doneItems, ["id"]).reverse();
 
                                             items.push.apply(items, doneItems);
                                             items = items.splice(0, 16);
