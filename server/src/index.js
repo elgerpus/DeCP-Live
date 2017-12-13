@@ -4,10 +4,6 @@ import io from "socket.io";
 import fs from "fs-extra";
 import _ from "lodash";
 import sharp from "sharp";
-import {
-    unescape
-}
-from "querystring";
 
 const _app = express();
 const _http = http.Server(_app);
@@ -153,7 +149,7 @@ _io.on("connection", (socket) => {
         }
 
         // File path to pending batch file
-        const id = new Date().valueOf();
+        const id = Date.now();
         const filepath = PENDING_BATCHES_PATH + "/" + id + ".batch";
 
         // Create file if not exists
@@ -331,7 +327,7 @@ _io.on("connection", (socket) => {
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
-                lines.splice(0, 2);
+                lines.shift();
 
                 // Take a subset for pagination
                 const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -370,7 +366,7 @@ _io.on("connection", (socket) => {
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
-                lines.splice(0, 2);
+                lines.shift();
 
                 // Take a subset for pagination
                 const collection = _.chain(lines).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -378,8 +374,7 @@ _io.on("connection", (socket) => {
                 // For each batch query image on the page, read their result file
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
-                    const filename = collection[i].split(IMAGE_PATH)[1].substr(1).replace(/\//g, "#");
-                    const path = `${RESULTS_PATH}/${batchID}/${filename}.res`;
+                    const path = `${RESULTS_PATH}/${batchID}/${collection[i].replace(/\//g, "#")}.res`;
                     promises.push(fs.readFile(path));
                 }
 
@@ -452,7 +447,7 @@ _io.on("connection", (socket) => {
 
     // Get result images
     socket.on("getResultImages", (batchID, imageID, pageNumber) => {
-        fs.readFile(`${RESULTS_PATH}/${batchID}/${imageID}.res`)
+        fs.readFile(`${RESULTS_PATH}/${batchID}/${IMAGE_PATH.replace(/\//g, "#")}#${imageID}.res`)
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
