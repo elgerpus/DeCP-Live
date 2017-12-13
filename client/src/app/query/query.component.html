@@ -8,24 +8,37 @@
 
     <mz-card>
         <mz-card-title>
-            <div class="table-row row">
-                <div class="col s4">
-                    <p>Selected images: {{ selected.length }}</p>
+            <div class="row valign-wrapper">
+                <div class="col s4 valign-wrapper">
+                    <p>Selected images: {{ selected.size }}</p>
                 </div>
-                <div class="col s2">
+                <div class="col s4 valign-wrapper">
+                    <button mz-button class="right indigo lighten-2 full-width" [large]="true" (click)="onSelectAll()">
+                        {{ selectAllText }}
+                    </button>
+                </div>
+                <div class="col s4 valign-wrapper">
+                    <button mz-button class="right indigo lighten-2 full-width" [large]="true" [disabled]="!selected.size" (click)="onClear()">
+                            Clear
+                        </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col s4">
                     <mz-input-container>
                         <input mz-input [label]="'Value of B'" id="b-input" type="number" [(ngModel)]="b">
                     </mz-input-container>
                 </div>
-                <div class="col s2">
+                <div class="col s4">
                     <mz-input-container>
-                        <input mz-input [label]="'Value of K'" id="b-input" type="number" [(ngModel)]="k">
+                        <input mz-input [label]="'Value of K'" id="k-input" type="number" [(ngModel)]="k">
                     </mz-input-container>
                 </div>
-                <div class="col s4 valign-wrapper">
-                    <button mz-button class="right indigo lighten-2" [large]="true" [disabled]="!selected.length" (click)="selected.length = 0">
-                        Clear
-                    </button>
+                <div class="col s4">
+                    <mz-input-container>
+                        <input mz-input [label]="'Number of results'" id="top-input" type="number" [(ngModel)]="top">
+                    </mz-input-container>
                 </div>
             </div>
         </mz-card-title>
@@ -68,7 +81,7 @@
 
     <div class="row">
         <div class="col s12">
-            <button mz-button [large]="true" class="full-width" [disabled]="!selected.length" (click)="onSubmit()">
+            <button mz-button [large]="true" class="full-width" [disabled]="!selected.size || !b || !k || !top" (click)="onSubmit()">
                 Submit
               </button>
         </div>

@@ -15,12 +15,15 @@ import { IImage } from "../interfaces/iimage";
 })
 export class QueryComponent implements OnInit {
 
-    selected: string[] = [];
+    selected: Set<string>;
     b: number;
     k: number;
+    top: number;
     images: IImage[][];
     pageNumbers: number[];
     pagination: IPagination;
+    selectAllText: string;
+    selectAll: boolean;
     loaded = false;
 
     constructor(
@@ -31,25 +34,67 @@ export class QueryComponent implements OnInit {
     ) { }
 
     ngOnInit() {
+        this.images = [];
+        this.selected = new Set<string>();
+        this.resetValues();
+
         this.getImages(1);
     }
 
     onImage(imageID: string) {
-        const index = this.selected.indexOf(imageID);
-
-        if (-1 < index) {
-            this.selected.splice(index, 1);
+        if (this.selected.has(imageID)) {
+            this.selected.delete(imageID);
         }
         else {
-            this.selected.push(imageID);
+            this.selected.add(imageID);
         }
+
+        this.assignSelectAll();
+    }
+
+    onSelectAll() {
+        for (let i = 0; i < this.images.length; i++) {
+            for (let j = 0; j < this.images[i].length; j++) {
+                if (this.selectAll) {
+                    this.selected.add(this.images[i][j].imageID);
+                }
+                else {
+                    this.selected.delete(this.images[i][j].imageID);
+                }
+            }
+        }
+
+        this.assignSelectAll();
+    }
+
+    onClear() {
+        this.selected.clear();
+        this.assignSelectAll();
+    }
+
+    assignSelectAll() {
+        for (let i = 0; i < this.images.length; i++) {
+            for (let j = 0; j < this.images[i].length; j++) {
+                if (!this.selected.has(this.images[i][j].imageID)) {
+                    this.selectAllText = this.utilities.SELECT_ALL_TEXT;
+                    this.selectAll = true;
+                    return;
+                }
+            }
+        }
+
+        this.selectAllText = this.utilities.DESELECT_ALL_TEXT;
+        this.selectAll = false;
     }
 
     onSubmit() {
-        this.socketService.sendQueryImages(this.selected, this.b, this.k).first().subscribe(
+        this.socketService.sendQueryImages(Array.from(this.selected), this.b, this.k).first().subscribe(
             success => {
                 if (success) {
                     this.toastService.show("Query succeeded!", 4000);
+                    this.selected.clear();
+                    this.resetValues();
+                    this.assignSelectAll();
                 }
                 else {
                     this.toastService.show("Query failed!", 4000);
@@ -69,7 +114,7 @@ export class QueryComponent implements OnInit {
     }
 
     isSelected(imageID: string): boolean {
-        return this.selected.includes(imageID);
+        return this.selected.has(imageID);
     }
 
     getImages(page: number) {
@@ -101,11 +146,19 @@ export class QueryComponent implements OnInit {
                 }
 
                 this.loaded = true;
+
+                this.assignSelectAll();
             },
             error => {
                 this.toastService.show("Unknown error!", 4000);
                 console.log(error);
             }
         );
+    }
+
+    resetValues() {
+        this.b = this.utilities.DEFAULT_B;
+        this.k = this.utilities.DEFAULT_K;
+        this.top = this.utilities.DEFAULT_TOP;
     }
 }
