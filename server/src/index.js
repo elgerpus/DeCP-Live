@@ -164,62 +164,24 @@ _io.on("connection", (socket) => {
         const id = Date.now();
         const filepath = QUERIES_PATH + "/" + id + ".batch";
 
-        // Create file if not exists
-        if (!fs.existsSync(filepath)) {
-            fs.openSync(filepath, "w");
+        // Prepend root path to imageIDs
+        for (let i = 0; i < imagePaths.length; i++) {
+            imagePaths[i] = IMAGES_PATH + imagePaths[i];
         }
 
-        // Read the pending batch file
-        fs.readFile(filepath, (err, data) => {
+        // Construct file contents
+        const contents = b + ":" + k + ":" + top + ":" + imagePaths.length + ":\n" + imagePaths.join("\n") + "\n";
+
+        // Write contents to the file (overwrite)
+        fs.writeFile(filepath, contents, err => {
             if (err) {
-                console.log("Couldn't open/create pending batch file: " + filepath);
+                console.log(new Date() + ": " + err);
                 socket.emit("imageQuery", false);
                 return;
             }
 
-            let contents = data.toString();
-            let n;
-            let paths;
-
-            // Prepend root path to imageIDs
-            for (let i = 0; i < imagePaths.length; i++) {
-                imagePaths[i] = IMAGES_PATH + imagePaths[i];
-            }
-
-            // File has contents -> Don't add duplicates and update header
-            if (contents.length !== 0) {
-                // Get lines of file and throw away empty lines
-                const arr = contents.split("\n").filter(x => x);
-
-                // Remove the header
-                arr.shift();
-
-                // Combine the query and file contents, no duplicates
-                const pathsArr = _.union(arr, imagePaths);
-
-                n = pathsArr.length;
-                paths = pathsArr.join("\n");
-            }
-            // File is empty -> Add all paths and create header
-            else {
-                n = imagePaths.length;
-                paths = imagePaths.join("\n");
-            }
-
-            // Construct file contents
-            contents = b + ":" + k + ":" + top + ":" + n + ":\n" + paths + "\n";
-
-            // Write contents to the file (overwrite)
-            fs.writeFile(filepath, contents, err => {
-                if (err) {
-                    console.log(new Date() + ": " + err);
-                    socket.emit("imageQuery", false);
-                    return;
-                }
-
-                // Emit to the client
-                socket.emit("imageQuery", true);
-            });
+            // Emit to the client
+            socket.emit("imageQuery", true);
         });
     });
 
@@ -252,7 +214,7 @@ _io.on("connection", (socket) => {
                         }
 
                         items.sort((a, b) => {
-                            return b.batchID < a.batchID;
+                            return parseInt(b.batchID) < parseInt(a.batchID);
                         });
 
                         if (items.length !== PAGE_SIZE) {
@@ -283,7 +245,7 @@ _io.on("connection", (socket) => {
                                             }
 
                                             doneItems.sort((a, b) => {
-                                                return a.batchID < b.batchID;
+                                                return parseInt(a.batchID) < parseInt(b.batchID);
                                             });
 
                                             items.push.apply(items, doneItems);
