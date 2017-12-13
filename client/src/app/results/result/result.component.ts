@@ -93,6 +93,10 @@ export class ResultComponent implements OnInit {
                     this.pageNumbers[j] = startEnd.start + j;
                 }
 
+                for (let i = 0; i < envelope.items.length; i++) {
+                    envelope.items[i].imageID.replace(/#/g, "/");
+                }
+
                 this.imagesTable = envelope.items;
 
                 for (let i = 0; i < 4; i++) {

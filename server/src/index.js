@@ -106,7 +106,7 @@ try {
     }
 }
 catch (err) {
-    console.log(err);
+    console.log(new Date() + ": " + err);
 }
 
 // fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
@@ -212,7 +212,7 @@ _io.on("connection", (socket) => {
             // Write contents to the file (overwrite)
             fs.writeFile(filepath, contents, err => {
                 if (err) {
-                    console.log(err);
+                    console.log(new Date() + ": " + err);
                     socket.emit("imageQuery", false);
                     return;
                 }
@@ -285,20 +285,20 @@ _io.on("connection", (socket) => {
                                             socket.emit("getBatchResults", new Envelope(items, new Pagination(pageNumber, numberOfPages)));
                                         })
                                         .catch(err => {
-                                            console.log(err);
+                                            console.log(new Date() + ": " + err);
                                         });
                                 })
                                 .catch(err => {
-                                    console.log(err);
+                                    console.log(new Date() + ": " + err);
                                 });
                         }
                     })
                     .catch(err => {
-                        console.log(err);
+                        console.log(new Date() + ": " + err);
                     });
             })
             .catch(err => {
-                console.log(err);
+                console.log(new Date() + ": " + err);
             });
     });
 
@@ -364,12 +364,12 @@ _io.on("connection", (socket) => {
                         socket.emit("getBatchImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
                     })
                     .catch(err => {
-                        console.log(err);
+                        console.log(new Date() + ": " + err);
                         socket.emit("getBatchImages", false);
                     });
             })
             .catch((err) => {
-                console.log(err);
+                console.log(new Date() + ": " + err);
                 socket.emit("getBatchImages", false);
             });
     });
@@ -429,17 +429,17 @@ _io.on("connection", (socket) => {
                                 socket.emit("getBatchImagesTopResults", images);
                             })
                             .catch(err => {
-                                console.log(err);
+                                console.log(new Date() + ": " + err);
                                 socket.emit("getBatchImagesTopResults", false);
                             });
                     })
                     .catch((err) => {
-                        console.log(err);
+                        console.log(new Date() + ": " + err);
                         socket.emit("getBatchImagesTopResults", false);
                     });
             })
             .catch((err) => {
-                console.log(err);
+                console.log(new Date() + ": " + err);
                 socket.emit("getBatchImagesTopResults", false);
             });
     });
@@ -464,7 +464,7 @@ _io.on("connection", (socket) => {
                     });
             })
             .catch(err => {
-                console.log(err);
+                console.log(new Date() + ": " + err);
                 socket.emit("getBatchImage", false);
             });
     });
@@ -501,12 +501,12 @@ _io.on("connection", (socket) => {
                         socket.emit("getResultImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(lines.length / PAGE_SIZE))));
                     })
                     .catch(err => {
-                        console.log(err);
+                        console.log(new Date() + ": " + err);
                         socket.emit("getResultImages", false);
                     });
             })
             .catch((err) => {
-                console.log(err);
+                console.log(new Date() + ": " + err);
                 socket.emit("getResultImages", false);
             });
     });
