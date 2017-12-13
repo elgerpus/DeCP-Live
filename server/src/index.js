@@ -283,7 +283,7 @@ _io.on("connection", (socket) => {
                                             }
 
                                             doneItems.sort((a, b) => {
-                                                return b.batchID < a.batchID;
+                                                return a.batchID < b.batchID;
                                             });
 
                                             items.push.apply(items, doneItems);
