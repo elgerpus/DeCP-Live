@@ -12,6 +12,11 @@
                     Query image: {{ displayImageID }}
                 </div>
             </div>
+            <div *ngIf="batchImageLoaded" class="row">
+                <div class="col s12">
+                    Features extracted: {{ batchImage.features }}
+                </div>
+            </div>
         </mz-card-title>
         <mz-card-content>
             <div *ngIf="batchImageLoaded" class="row">
