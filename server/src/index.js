@@ -234,7 +234,7 @@ _io.on("connection", (socket) => {
                         let items = [];
                         for (let i = 0; i < resultFiles.length; i++) {
                             const lines = resultFiles[i].toString().split("\n").filter(x => x);
-                            const id = collection[i];
+                            const id = collection[i].slice(0, -6);
                             const header = lines[0].split(":");
                             items.push(new Result(id, STATUS.QUEUED, header[0], header[1], 0, 0, lines.length - 1));
                         }
@@ -294,7 +294,7 @@ _io.on("connection", (socket) => {
     socket.on("getBatchInfo", batchID => {
         console.log("Batch info for " + batchID);
 
-        fs.readFile(`${PENDING_BATCHES_PATH}/${batchID}/batch.res`)
+        fs.readFile(`${PENDING_BATCHES_PATH}/${batchID}.batch`)
             .then(contents => {
                 // Get lines and strip away empty lines
                 const lines = contents.toString().split("\n").filter(x => x);
@@ -302,7 +302,7 @@ _io.on("connection", (socket) => {
                 // Get rid of header
                 const header = lines.shift().split(":");
 
-                socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], undefined, undefined, lines.length));
+                socket.emit("getBatchInfo", new Result(batchID, STATUS.QUEUED, header[1], header[2], undefined, undefined, lines.length));
             })
             .catch(() => {
                 fs.readFile(`${RESULTS_PATH}/${batchID}/batch.res`)
@@ -334,15 +334,17 @@ _io.on("connection", (socket) => {
 
                 // Resize images and convert to buffer
                 const promises = [];
+                const paths = [];
                 for (let i = 0; i < collection.length; i++) {
-                    promises.push(sharp(collection[i]).resize(300).min().toFormat("jpg").toBuffer());
+                    paths[i] = collection[i].split(batchID)[1].substring(1).replace(/#/g, "/").slice(0, -4);
+                    promises.push(sharp(paths[i]).resize(300).min().toFormat("jpg").toBuffer());
                 }
 
                 // After all images have been converted to a buffer
                 Promise.all(promises)
                     .then(buffers => {
                         for (let i = 0; i < collection.length; i++) {
-                            const id = collection[i].split(IMAGE_PATH)[1].substring(1).replace(/\//g, "#");
+                            const id = paths[i].split(IMAGE_PATH)[1].substring(1).replace(/\//g, "#");
                             collection[i] = new Image(id, "data:image/jpg;base64, " + buffers[i].toString("base64"));
                         }
 
@@ -374,8 +376,8 @@ _io.on("connection", (socket) => {
                 // For each batch query image on the page, read their result file
                 const promises = [];
                 for (let i = 0; i < collection.length; i++) {
-                    const path = `${RESULTS_PATH}/${batchID}/${collection[i].replace(/\//g, "#")}.res`;
-                    promises.push(fs.readFile(path));
+                    // const path = `${RESULTS_PATH}/${batchID}/${collection[i].replace(/\//g, "#")}.res`;
+                    promises.push(fs.readFile(collection[i]));
                 }
 
                 // After all result files have been read
