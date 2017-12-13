@@ -4,7 +4,7 @@
     "description": "Socket server",
     "main": "index.js",
     "scripts": {
-        "watch": "babel-watch src/index.js",
+        "watch": "babel-watch src/index.js -- 32000 /Users/hilmar/Documents/HR/Git/RU/semester5/UROP/DeCP/server/src/images /Users/hilmar/Documents/HR/Git/RU/semester5/UROP/DeCP/server/src/pending_batches /Users/hilmar/Documents/HR/Git/RU/semester5/UROP/DeCP/server/src/results",
         "build": "babel src -d dist",
         "serve": "node dist/index.js"
     },
