@@ -88,7 +88,7 @@ export class QueryComponent implements OnInit {
     }
 
     onSubmit() {
-        this.socketService.sendQueryImages(Array.from(this.selected), this.b, this.k).first().subscribe(
+        this.socketService.sendQueryImages(Array.from(this.selected), this.b, this.k, this.top).first().subscribe(
             success => {
                 if (success) {
                     this.toastService.show("Query succeeded!", 4000);

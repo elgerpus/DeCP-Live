@@ -143,18 +143,18 @@ _io.on("connection", (socket) => {
     });
 
     // Submit image query
-    socket.on("imageQuery", (imagePaths, b, k) => {
+    socket.on("imageQuery", (imagePaths, b, k, top) => {
         console.log("User queried. b: " + b + " | k: " + k + " | IDs: " + imagePaths);
 
         // Make sure variables have values
-        if (!b | !k | !imagePaths) {
+        if (!b | !k | !top | !imagePaths) {
             socket.emit("imageQuery", false);
             return;
         }
 
         // File path to pending batch file
         const id = new Date().valueOf();
-        const filepath = PENDING_BATCHES_PATH + "/" + id;
+        const filepath = PENDING_BATCHES_PATH + "/" + id + ".batch";
 
         // Create file if not exists
         if (!fs.existsSync(filepath)) {
@@ -199,7 +199,7 @@ _io.on("connection", (socket) => {
             }
 
             // Construct file contents
-            contents = b + ":" + k + ":" + n + ":\n" + paths + "\n";
+            contents = b + ":" + k + ":" + top + ":" + n + ":\n" + paths + "\n";
 
             // Write contents to the file (overwrite)
             fs.writeFile(filepath, contents, err => {
