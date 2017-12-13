@@ -242,7 +242,7 @@ _io.on("connection", (socket) => {
                                                 doneItems.push(new Result(id, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
                                             }
 
-                                            doneItems = _.sortBy(doneItems, ["id"]).reverse();
+                                            doneItems = _.sortBy(doneItems, ["id"]);
 
                                             items.push.apply(items, doneItems);
                                             items = items.splice(0, 16);
