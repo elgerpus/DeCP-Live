@@ -82,7 +82,7 @@
                             <tbody>
                                 <tr *ngFor="let image of imagesTable">
                                     <td><img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)"></td>
-                                    <td>29</td>
+                                    <td>{{ image.votes }}</td>
                                     <td>{{ utilities.getImageID(image.imageID) }}</td>
                                 </tr>
                             </tbody>
