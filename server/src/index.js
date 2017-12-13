@@ -33,6 +33,14 @@ class Image {
     }
 }
 
+class BatchImage {
+    constructor(imageID, imageString, features) {
+        this.imageID = imageID;
+        this.imageString = imageString;
+        this.features = features;
+    }
+}
+
 class ImageResult {
     constructor(imageID, imageString, votes) {
         this.imageID = imageID;
@@ -266,7 +274,7 @@ _io.on("connection", (socket) => {
                                                 const lines = resultFiles[i].toString().split("\n").filter(x => x);
                                                 const id = collection[i];
                                                 const header = lines.shift().split(":");
-                                                items.push(new Result(id, STATUS.DONE, header[0], header[1], header[3], header[3] / lines.length, lines.length));
+                                                items.push(new Result(id, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
                                             }
 
                                             items = items.splice(0, 16);
@@ -317,7 +325,7 @@ _io.on("connection", (socket) => {
                         // Get rid of header
                         const header = lines.shift().split(":");
 
-                        socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], header[3], header[3] / lines.length, lines.length));
+                        socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], header[4], header[4] / lines.length, lines.length));
                     })
                     .catch(() => {
                         socket.emit("getBatchInfo", false);
@@ -437,16 +445,26 @@ _io.on("connection", (socket) => {
     });
 
     // Get batch image
-    socket.on("getBatchImage", (image) => {
-        const path = `${IMAGES_PATH}/${image.replace(/#/g, "/")}`;
+    socket.on("getBatchImage", (batchID, imageID) => {
+        fs.readFile(`${RESULTS_PATH}/${batchID}/${IMAGES_PATH.replace(/\//g, "#")}#${imageID}.res`)
+            .then(contents => {
+                // Get lines and strip away empty lines
+                const lines = contents.toString().split("\n");
+                const header = lines.shift().split(":");
 
-        sharp(path).resize(300).min().toFormat("jpg").toBuffer()
-            .then(buffer => {
-                const img = new Image(image, "data:image/jpg;base64, " + buffer.toString("base64"));
+                sharp(header[0]).resize(300).min().toFormat("jpg").toBuffer()
+                    .then(buffer => {
+                        console.log(header);
+                        const image = new BatchImage(imageID, "data:image/jpg;base64, " + buffer.toString("base64"), header[1]);
 
-                socket.emit("getBatchImage", img);
+                        socket.emit("getBatchImage", image);
+                    })
+                    .catch(() => {
+                        socket.emit("getBatchImage", false);
+                    });
             })
-            .catch(() => {
+            .catch(err => {
+                console.log(err);
                 socket.emit("getBatchImage", false);
             });
     });

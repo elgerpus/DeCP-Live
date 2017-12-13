@@ -9,6 +9,7 @@ import { IEnvelope } from "./interfaces/ienvelope";
 import { IResult } from "./interfaces/iresult";
 import { IResultDetails } from "./interfaces/iresult-details";
 import { IImageResult } from "./interfaces/iimage-result";
+import { IBatchImage } from "./interfaces/ibatch-image";
 
 @Injectable()
 export class SocketService {
@@ -93,11 +94,11 @@ export class SocketService {
         return observable;
     }
 
-    getBatchImage(image: string): Observable<IImage> {
-        const observable = new Observable<IImage>(observer => {
-            this.socket.emit("getBatchImage", image);
-            this.socket.on("getBatchImage", img => {
-                observer.next(img);
+    getBatchImage(batchID: string, imageID: string): Observable<IBatchImage> {
+        const observable = new Observable<IBatchImage>(observer => {
+            this.socket.emit("getBatchImage", batchID, imageID);
+            this.socket.on("getBatchImage", image => {
+                observer.next(image);
             });
         });
 

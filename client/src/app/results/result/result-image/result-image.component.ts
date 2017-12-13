@@ -8,6 +8,7 @@ import { UtilitiesService } from "../../../utilities.service";
 
 import { IPagination } from "./../../../interfaces/ipagination";
 import { IImage } from "../../../interfaces/iimage";
+import { IBatchImage } from "../../../interfaces/ibatch-image";
 
 @Component({
     selector: "app-result-image",
@@ -19,7 +20,7 @@ export class ResultImageComponent implements OnInit {
     batchID: string;
     imageID: string;
     displayImageID: string;
-    batchImage: IImage;
+    batchImage: IBatchImage;
     imagesGrid: IImage[][];
     imagesTable: IImage[];
     pageNumbers: number[];
@@ -54,7 +55,7 @@ export class ResultImageComponent implements OnInit {
 
     getBatchImage() {
         this.batchImageLoaded = false;
-        this.socketService.getBatchImage(this.imageID).first().subscribe(
+        this.socketService.getBatchImage(this.batchID, this.imageID).first().subscribe(
             image => {
                 this.batchImage = image;
                 this.batchImageLoaded = true;
