@@ -251,6 +251,10 @@ _io.on("connection", (socket) => {
                             items.push(new Result(id, STATUS.QUEUED, header[0], header[1], 0, 0, lines.length - 1));
                         }
 
+                        items.sort((a, b) => {
+                            return b.batchID < a.batchID;
+                        });
+
                         if (items.length !== PAGE_SIZE) {
                             // Read results directory
                             fs.readdir(RESULTS_PATH)
@@ -270,13 +274,19 @@ _io.on("connection", (socket) => {
                                     Promise.all(promises)
                                         .then(resultFiles => {
                                             // Parse the files
+                                            let doneItems = [];
                                             for (let i = 0; i < resultFiles.length; i++) {
                                                 const lines = resultFiles[i].toString().split("\n").filter(x => x);
                                                 const id = collection[i];
                                                 const header = lines.shift().split(":");
-                                                items.push(new Result(id, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
+                                                doneItems.push(new Result(id, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
                                             }
 
+                                            doneItems.sort((a, b) => {
+                                                return b.batchID < a.batchID;
+                                            });
+
+                                            items.push.apply(items, doneItems);
                                             items = items.splice(0, 16);
 
                                             const numberOfPages = Math.ceil((pending_batches.length + results.length) / PAGE_SIZE);
@@ -325,7 +335,7 @@ _io.on("connection", (socket) => {
                         // Get rid of header
                         const header = lines.shift().split(":");
 
-                        socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[1], header[2], header[4], header[4] / lines.length, lines.length));
+                        socket.emit("getBatchInfo", new Result(batchID, STATUS.DONE, header[0], header[1], header[4], header[4] / lines.length, lines.length));
                     })
                     .catch(() => {
                         socket.emit("getBatchInfo", false);
