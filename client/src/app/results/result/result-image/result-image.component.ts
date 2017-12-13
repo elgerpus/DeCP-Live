@@ -9,6 +9,7 @@ import { UtilitiesService } from "../../../utilities.service";
 import { IPagination } from "./../../../interfaces/ipagination";
 import { IImage } from "../../../interfaces/iimage";
 import { IBatchImage } from "../../../interfaces/ibatch-image";
+import { IImageResult } from "../../../interfaces/iimage-result";
 
 @Component({
     selector: "app-result-image",
@@ -21,8 +22,8 @@ export class ResultImageComponent implements OnInit {
     imageID: string;
     displayImageID: string;
     batchImage: IBatchImage;
-    imagesGrid: IImage[][];
-    imagesTable: IImage[];
+    imagesGrid: IImageResult[][];
+    imagesTable: IImageResult[];
     pageNumbers: number[];
     pagination: IPagination;
     loaded = false;
