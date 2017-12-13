@@ -223,7 +223,7 @@ _io.on("connection", (socket) => {
                                     const dirs = results.filter(f => fs.statSync(`${RESULTS_PATH}/${f}`).isDirectory());
 
                                     // Take a subset for pagination
-                                    const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+                                    const collection = _.chain(dirs).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value().reverse();
 
                                     // Read the batch.res files
                                     const promises = [];
