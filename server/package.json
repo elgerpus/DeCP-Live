@@ -12,6 +12,7 @@
     "private": true,
     "dependencies": {
         "babel-cli": "^6.26.0",
+        "chokidar": "^1.7.0",
         "express": "^4.16.2",
         "fs-extra": "^4.0.3",
         "hash.js": "^1.1.3",

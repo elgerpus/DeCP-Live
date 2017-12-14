@@ -164,4 +164,14 @@ export class SocketService {
 
         return observable;
     }
+
+    newResult(): Observable<boolean> {
+        const observable = new Observable<boolean>(observer => {
+            this.socket.on("newResult", success => {
+                observer.next(success);
+            });
+        });
+
+        return observable;
+    }
 }

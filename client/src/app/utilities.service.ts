@@ -13,6 +13,7 @@ export class UtilitiesService {
     DEFAULT_TOP = 100;
     SELECT_ALL_TEXT = "Select all on page";
     DESELECT_ALL_TEXT = "Deselect all on page";
+    TOAST_DURATION = 3000;
 
     constructor() { }
 
