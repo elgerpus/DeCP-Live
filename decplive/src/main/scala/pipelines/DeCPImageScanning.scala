@@ -67,12 +67,26 @@ object DeCPImageScanning {
       } else {
         20
       }
-    var maxResults = 100;
-    val imagesToAddToDB  = if (args.length > 8) {  // Images that we want to add to the indexed DB
-      args(9)
+    var maxResults = 100
+    val imagesInDB = if (args.length > 8) {  // Images that we want to add to the indexed DB
+      if ( args(9).endsWith("/")) {
+        args(9)
+      } else {
+        args(9) + "/"
+      }
     } else {
-      "/home/decp/images/results/imgs/"
+      "/home/decp/images/dbimages/"
     }
+    val imagesToAddToDB  = if (args.length > 9) {  // Images that we want to add to the indexed DB
+      if (args(10).endsWith("/")) {
+        args(10)
+      } else {
+        args(10) + "/"
+      }
+    } else {
+      "/home/decp/images/addimages/"
+    }
+
 
 
 /* #### Create the spark context ########################### ########################### ########################### */
@@ -122,7 +136,7 @@ object DeCPImageScanning {
     val imgToAddRDD = sc.parallelize( filesToAdd,  partitionsToUse )
     // extracting SIFTs using boofvc
     val descToAddRDD =
-      booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, imgToAddRDD )
+      booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles( sc, imgToAddRDD, true, imagesInDB)
     // index the SIFTs (using the DeCP-Index-hierarchy
     val toAddDBRDD = queryDescriptorAssignments( sc, myTree, descToAddRDD, 1 ).map( it => {
       // I need to remove the querypointID String as it is not needed, we only keep the clusterID as key
@@ -138,13 +152,15 @@ object DeCPImageScanning {
     val dbRDD = if ( new File(dbFileName).exists() ) {
       println("Load the database from (Object)-file")
       val dbFromFileRDD = loadDB( sc, dbFileName, dbFileFormat )
-
+      printf("dbFromFileRDD has " + dbFromFileRDD.count() + " and ")
+      printf("toAddDBRDD has " + toAddDBRDD.count() )
       // make a supplemented dbRDD called dbRDD but we need to cache this one..
       println("Merging the loaded and extracted databases")
-      this.joinTwoDBRDDs(dbFromFileRDD, toAddDBRDD)
+      this.leftOuterJoinTwoDBRDDs( dbFromFileRDD, toAddDBRDD )
     } else {
       toAddDBRDD
     }.persist(StorageLevel.DISK_ONLY)
+
 
     // unpersist the toAddDBRDD (as we don't need it anymore)
     toAddDBRDD.unpersist()
@@ -174,14 +190,14 @@ object DeCPImageScanning {
         // halting condition to terminate the program
         run = false
         queryBatchFiles(0).delete()
-      } else if ( queryBatchFiles.length == 1 & queryBatchFiles(0).getName.equals( "saveDB.batch" ) ) {
+      } else if ( queryBatchFiles.length == 1 & queryBatchFiles(0).getName.equals( "save.batch" ) ) {
         // We have a request to save the current state of the database to file
         val reader = Source.fromFile(queryBatchFiles(0)).getLines()
         // check what type of file we should output to:
         if (reader.next() == "objectFile") {
           // write to an object file using the spark context (currently only supported format).
           val outputname = reader.next()
-          println("Saveing database to file to " + outputname)
+          println("Saving database to file to " + outputname)
           dbRDD.saveAsObjectFile( outputname )
         } else {
           //TODO: Write out sequence as files or any other file format
@@ -190,12 +206,13 @@ object DeCPImageScanning {
         // delete the file for next iteration of the inf-loop
         queryBatchFiles(0).delete()
       } else {
+/* ### Searching a batch of images  ################################################################################  */
         // messure how long it will take to run this batch, starting timer..
         val startTimer =  Instant.now()
 
         // stuff to search so we reset the sleep-timer in case we get more queries soon..
         sleepTimeFactor = 0.1
-        // #### Creating the querydescriptorset and partitioninig it if needed ####
+        //  Creating the querydescriptorset and partitioninig it if needed
 
         // parse the query.batch file to know what to do.
         // take the first batch file and open a scala Source to read it.
@@ -203,113 +220,139 @@ object DeCPImageScanning {
         // first line has the config info seperated by ':'
         val configFileds = reader.next().split(":")
         // check and set searchExpansion, knnSize and the maxResult size settings
-        searchExpansion = configFileds(0).toInt
-        if (searchExpansion < 1 || searchExpansion > 5 ) {
-          searchExpansion = 1;
+        try {
+          searchExpansion = configFileds(0).toInt
+        } catch  {
+          case e: Exception => {println("Exception caught trying to convert " + configFileds(0) + " to Int")
+            searchExpansion = 1
+          }
         }
-        knnSize = configFileds(1).toInt
+        if (searchExpansion < 1 || searchExpansion > 10 ) {
+          knnSize = 20
+        }
+        try {
+          knnSize = configFileds(1).toInt
+        } catch  {
+          case e: Exception => {println("Exception caught trying to convert " + configFileds(1) + " to Int")
+            searchExpansion = 1
+          }
+        }
         if (knnSize < 5 ) {
-          knnSize = 20;
+          knnSize = 20
         }
-        maxResults = configFileds(2).toInt
+        try {
+          maxResults = configFileds(2).toInt
+        } catch  {
+          case e: Exception => {println("Exception caught trying to convert " + configFileds(2) + " to Int")
+            searchExpansion = 100
+          }
+        }
         if ( maxResults < 10 || maxResults > 1000 ) {
           println("Size of maxResult out of bounds (<10 or > 1000)")
           maxResults = 100
         }
-        //val rand = new scala.util.Random( System.currentTimeMillis() )
-        //var queryFiles : List[(Long, File)] = Nil
         var queryFiles : List[File] = Nil
-        for( line <- reader ) {
-          //val qImgID : Long = rand.nextInt()
+        while ( reader.hasNext ) {
+          val line = reader.next()
           val ret = new File(line)
           if (ret.exists()) {
-            //queryFiles = List((qImgID, ret)) ::: queryFiles
-            queryFiles = List((ret)) ::: queryFiles
+            queryFiles = List(ret) ::: queryFiles
           }
         }
+        println(" and we read " + queryFiles.length + " valid image paths")
         // we have read the config and we have a list of Files with all the query images to parse
         // TODO: Check if queryFiles is empty and stop search if it is.
 
-        val maxNumImagesBeforeMultiCore = 100
+        val maxNumImagesBeforeMultiCore = 1000
         val numPart = if ( queryFiles.length > maxNumImagesBeforeMultiCore) {
           queryFiles.length / maxNumImagesBeforeMultiCore
         } else {
           1
         }
-        // paralellize the query workload before extracting the images
-        val queryImgRDD = sc.parallelize( queryFiles, numPart ).randomSplit( Array.fill[Double]( numPart )( 1 ) )
+        // paralellize the query workload before extracting the features from images
+        //val queryImgRDD = sc.parallelize( queryFiles, numPart ).randomSplit( Array.fill[Double]( numPart )( 1 ) )
+/*
         // for each query image
+        var  queryDescRDD : RDD[(String, SiftDescriptorContainer)] = null
         for ( queryImg <- queryImgRDD ) {
           // Extract the sifts, and we use the AbsoluteFilePath as the "key" with an "_descID" appended to it.
-          val queryDescRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles(sc, queryImg)
-          // we need to create an QueryRDD where the clusters to scan have been discovered
-          val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
-
-          // then I will use the joined db as the search db.
-          // do the actual scanning and QP-b-merger and vote-aggregation
-          val result = if (queryFiles(0).getName.startsWith("999") ) {
-            // scan the in-memory Bag-of-Features variant of our Indexed-DB
-            val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, 1)
-            BoFscan( sc, BoFDB, queryRDD, 100 )
+          val qdRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles(sc, queryImg)
+          if ( queryDescRDD == null ) {
+            queryDescRDD = qdRDD
           } else {
-            // scan the full descriptors, read from disk and all..
-            val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
-            c2qCreationAndBroadcastScan( sc, myTree, dbRDD, queryRDD, knnSize, maxResults )
+            queryDescRDD.++(qdRDD)
           }
+        }
+*/
+
+        val queryImgRDD = sc.parallelize( queryFiles)
+        val queryDescRDD = booflib.getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles(sc, queryImgRDD)
+
+        // then I will use the joined db as the search db.
+        // do the actual scanning and QP-b-merger and vote-aggregation
+        val result = if (queryFiles(0).getName.startsWith("999") ) {
+          // scan the in-memory Bag-of-Features variant of our Indexed-DB
+          val queryRDDBOF = queryDescriptorAssignments(sc, myTree, queryDescRDD, 1)
+          BoFscan( sc, BoFDB, queryRDDBOF, maxResults )
+        } else {
+          // scan the full descriptors, read from disk and all..
+          val queryRDD = queryDescriptorAssignments(sc, myTree, queryDescRDD, searchExpansion)
+          c2qCreationAndBroadcastScan( sc, myTree, dbRDD, queryRDD, knnSize, maxResults )
+        }
 
 /* #### Printing out the results #################################################################################### */
-          // Done scanning so we print the results..
-          // stop the timer ..
-          val runningTime = Duration.between(startTimer, Instant.now()).getSeconds
-          // We have a query batch with search settings ..
-          // Then we have multiple search results, one per queryimage in the batch ..
-          // create directory for results
-          var batchDir = new File (resultdir + queryBatchFiles(0).getName)
-          if (! batchDir.exists()) {
-            batchDir.mkdir()
-          } else {
-            val tmpName = batchDir.getAbsolutePath() + "_" + System.currentTimeMillis().toString
-            printf("batch with this name already exists, renameing to :" + tmpName)
-            batchDir = new File( tmpName)
-            batchDir.mkdir()
-          }
-          // write the batch result file
-          val resFileBatch = new BufferedWriter( new FileWriter( batchDir.getAbsolutePath + "/batchresults.res" ) )
-          // format of first line is "b:k:maxResultsPerQuery:#queryImagesInBatch:timeToProcessBatch:"
-          resFileBatch.write( searchExpansion.toString + ":" + knnSize.toString  + ":" + maxResults.toString  + ":"
-            +result.length.toString + ":" + runningTime.toString + ":\n" )
-          resFileBatch.flush()
-          println("printing results to result directory " + resultdir)
-          for (r <- result) {
-            // make the File handle for the result file
-            val idstr = r._1
-            val filenameFullPath = batchDir.getAbsolutePath + "/_" + idstr.replaceAll("/",":") + ".res"
-            println("Writing to: " + filenameFullPath)
-            val file = new File( filenameFullPath )
-            val bout = new BufferedWriter( new FileWriter( file ) )
-            // the resultstring has first a single line with the number of SIFTs extraced from the query-image, then
-            // each line that follows is a ranked list of databas-image-id and the number of votes it got
-            val lines = r._2.split("\n") // get all the lins of the result-string
-            // For our output we want the path to the query-image, followed by a colon and the number of SIFTs
-            bout.write(idstr + ":" + lines(0).toInt + ":\n")
-            for (line <- lines) {
-              // the database image ID and the number of votes is seperated by a single space (' ')
-              val words = line.split(" ")
-              if (words.length > 2) {  // skip the first line that only had the number of SIFTs
-                // TODO: HERE WE NEED TO REPLACE THE db-IIDs with the absoulute path and stop using the imagesToAddDB path
-                // Shit mix fix until we do the TO-DO above is the hard-code the path
-                bout.write( imagesToAddToDB +  words(1) + ".jpg" + ":" + words(2) + ":\n")
-              }
+        // Done scanning so we print the results..
+        // stop the timer ..
+        val runningTime = Duration.between(startTimer, Instant.now()).getSeconds
+        // We have a query batch with search settings ..
+        // Then we have multiple search results, one per queryimage in the batch ..
+        // create directory for results
+        var batchDir = new File (resultdir +
+          queryBatchFiles(0).getName.substring(0,queryBatchFiles(0).getName.lastIndexOf(".")))
+        if (! batchDir.exists()) {
+          batchDir.mkdir()
+        } else {
+          val tmpName = batchDir.getAbsolutePath() + "_" + System.currentTimeMillis().toString
+          printf("batch with this name already exists, renameing to :" + tmpName)
+          batchDir = new File( tmpName)
+          batchDir.mkdir()
+        }
+        // write the batch result file
+        val resFileBatch = new BufferedWriter( new FileWriter( batchDir.getAbsolutePath + "/batch.res" ) )
+        // format of first line is "b:k:maxResultsPerQuery:#queryImagesInBatch:timeToProcessBatch:"
+        resFileBatch.write( searchExpansion.toString + ":" + knnSize.toString  + ":" + maxResults.toString  + ":"
+          +result.length.toString + ":" + runningTime.toString + ":\n" )
+        resFileBatch.flush()
+        println("printing" + result.length + " results to result directory " + resultdir)
+        for (r <- result) {
+          // make the File handle for the result file
+          val idstr = r._1
+          val filenameFullPath = batchDir.getAbsolutePath + "/" + idstr.replaceAll("/","#") + ".res"
+          println("Writing to: " + filenameFullPath)
+          val file = new File( filenameFullPath )
+          val bout = new BufferedWriter( new FileWriter( file ) )
+          // the resultstring has first a single line with the number of SIFTs extraced from the query-image, then
+          // each line that follows is a ranked list of databas-image-id and the number of votes it got
+          val lines = r._2.split("\n") // get all the lins of the result-string
+          // For our output we want the path to the query-image, followed by a colon and the number of SIFTs
+          bout.write(idstr + ":" + lines(0).toInt + ":\n")
+          for (line <- lines) {
+            // the database image ID and the number of votes is seperated by a single space (' ')
+            val words = line.split(" ")
+            if (words.length > 2) {  // skip the first line that only had the number of SIFTs
+              // TODO: HERE WE NEED TO REPLACE THE db-IIDs with the absoulute path and stop using the imagesToAddDB path
+              // Shit mix fix until we do the TO-DO above is the hard-code the path
+              bout.write( imagesInDB +  words(1) + ".jpg" + ":" + words(2) + ":\n")
             }
-            bout.flush()
-            bout.close()
-            // add the result file to the batchResult as a seperate line
-            resFileBatch.write(filenameFullPath + "\n")
-            resFileBatch.flush()
-          } // end for (r <- result)
+          }
+          bout.flush()
+          bout.close()
+          // add the result file to the batchResult as a seperate line
+          resFileBatch.write(filenameFullPath + "\n")
+          resFileBatch.flush()
+        } // end for (r <- result)
 
-          println("Batch of " + result.length + " done and written to file")
-        } // end for (queryImgRDD <- queryImgRDD)
+        println("Batch of " + result.length + " done and written to file")
 
         // delete the processed batch file
         queryBatchFiles(0).delete()

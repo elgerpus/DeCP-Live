@@ -3,13 +3,13 @@ package extLibrary
 import java.awt.Graphics
 import java.awt.image.BufferedImage
 import java.io.{File, FilenameFilter}
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Paths, StandardCopyOption}
 
 import boofcv.io.image.UtilImageIO
 import boofcv.struct.image.ImageFloat32
 import eCP.Java.{SiftDescriptorContainer, boofcvWrapper}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 
 
 /**
@@ -57,7 +57,8 @@ class boofcvlib() extends Serializable {
    * @return An RDD of arrays where each array contains all the Sifts extraced from each image.
    */
   def getSiftDescriptorsFromImagesAsRDDofArraysOfSiftDescriptorContainers(
-      sc : SparkContext, imageFilesRDD : RDD[File] ): RDD[(String, Array[SiftDescriptorContainer])] =
+      sc : SparkContext, imageFilesRDD : RDD[File], rename : Boolean = false, dbfolder : String = "./dbimages/") :
+  RDD[(String, Array[SiftDescriptorContainer])] =
   {
     // for each image file in imageFilesRDD we :
     val res = imageFilesRDD.flatMap( imgFile => {
@@ -96,6 +97,18 @@ class boofcvlib() extends Serializable {
             // if it is not named by number it is a adhoc image and we give it a random name
             case e: Exception => new scala.util.Random(System.currentTimeMillis()).nextInt()
           }
+          // ceck if we should copy the file to the dbimage folder using the given id
+          if (rename) {
+            try {
+              Files.move(imgFile.toPath, new File(dbfolder + imageID + ".jpg").toPath)
+              println("successfully renamed " + imgFile.getAbsolutePath + " to " + dbfolder + imageID + ".jpg")
+            } catch {
+              case e: Exception => {
+                println("try-catch exception: Failed to move " +
+                  imgFile.getAbsolutePath + " to " + dbfolder + imageID + ".jpg")
+              }
+            }
+          } // end if (rename)
           // extract the sifts from the image
           getSiftDescriptorContainerArrayFromImageByteArrays( imageID, extractor.getSIFTDescriptorsAsByteArrays(imgf32) )
       }
@@ -105,8 +118,10 @@ class boofcvlib() extends Serializable {
   }
 
   def getDescriptorUniqueIDAndSiftDescriptorsAsRDDfromRDDofImageFiles(
-    sc : SparkContext, imageFilesRDD : RDD[File] ): RDD[(String, SiftDescriptorContainer)] = {
-    val res = getSiftDescriptorsFromImagesAsRDDofArraysOfSiftDescriptorContainers(sc, imageFilesRDD)
+    sc : SparkContext, imageFilesRDD : RDD[File], rename : Boolean = false, dbfolder : String = "./dbimages/")
+  : RDD[(String, SiftDescriptorContainer)] =
+  {
+    val res = getSiftDescriptorsFromImagesAsRDDofArraysOfSiftDescriptorContainers(sc, imageFilesRDD, rename, dbfolder)
       .flatMap( it => {
         var ret : List[(String, SiftDescriptorContainer)] = Nil
         for ( i <- 0 until it._2.length ) {
@@ -196,7 +211,7 @@ class boofcvlib() extends Serializable {
     val filter = new FilenameFilter {
       override def accept(dir: File, name: String): Boolean = {
         var ret = false
-        if ( name.endsWith(fileTypeEnding) ) {
+        if ( name.toLowerCase().endsWith(fileTypeEnding) ) {
           ret = true
         }
         ret
