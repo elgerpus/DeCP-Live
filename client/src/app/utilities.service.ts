@@ -5,6 +5,7 @@ import { IPagination } from "./interfaces/ipagination";
 @Injectable()
 export class UtilitiesService {
 
+    TITLE = "DeCP Live";
     SERVER_URL = "http://localhost:32000/";
     PAGINATION_OFFSET = 3;
     TOP_IMAGES = 5;
