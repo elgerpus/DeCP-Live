@@ -24,8 +24,8 @@ const STATUS = {
     RUNNING: 1,
     DONE: 2
 };
-const RUNNING_BATCH = [];
 const QUEUED_BATCHES = [];
+const IMAGES = [];
 
 // Arguments
 if (process.argv.length !== 6) {
@@ -88,9 +88,6 @@ class Envelope {
     }
 }
 
-const users = [];
-const images = [];
-
 // Create directory structures if it doesn't exist
 fs.ensureDirSync(IMAGES_PATH);
 fs.ensureDirSync(QUERIES_PATH);
@@ -107,7 +104,7 @@ const builder = path => {
     }
     catch (err) {
         if (path.includes(".jpg")) {
-            images.push(path);
+            IMAGES.push(path);
         }
     }
 };
@@ -123,50 +120,43 @@ catch (err) {
     console.log(new Date() + ": " + err);
 }
 
-// Watchers
-const query_watcher = chokidar.watch(QUERIES_PATH);
-query_watcher.on("unlink", () => {
-    // Add to running
-    RUNNING_BATCH.push(QUEUED_BATCHES.shift());
-});
-
+// Result watcher
 const result_watcher = chokidar.watch(RESULTS_PATH, {
     ignoreInitial: true
 });
 result_watcher.on("addDir", () => {
     // Remove from running
-    RUNNING_BATCH.shift();
+    QUEUED_BATCHES.shift();
     _io.emit("newResult", true);
 });
 
+// Hash password 
+const hashPassword = password => {
+    // Potentially trim the password
+    password = password.substring(0, PASSWORD_LENGTH_LIMIT);
+
+    let sum = HASH_ITERATIONS;
+    for (let i = 0; i < password.length; i++) {
+        sum += password.charCodeAt(i);
+    }
+
+    let hashed = password;
+
+    for (let i = 0; i < sum; i++) {
+        hashed = hash.sha384().update(hashed).digest("hex");
+    }
+
+    return hashed;
+};
+
 // Sockets
 _io.on("connection", (socket) => {
-    users.push(socket);
-    console.log("User: " + socket.id + " connected!");
-
-    // Hash password 
-    const hashPassword = password => {
-        // Potentially trim the password
-        password = password.substring(0, PASSWORD_LENGTH_LIMIT);
-
-        let sum = HASH_ITERATIONS;
-        for (let i = 0; i < password.length; i++) {
-            sum += password.charCodeAt(i);
-        }
-
-        let hashed = password;
-
-        for (let i = 0; i < sum; i++) {
-            hashed = hash.sha384().update(hashed).digest("hex");
-        }
-
-        return hashed;
-    };
-
     // Admin authenticate
     socket.on("adminAuthenticate", password => {
         const hashed = hashPassword(password);
-        socket.emit("adminAuthenticate", hashed === ADMIN_HASH);
+        const success = hashed === ADMIN_HASH;
+        console.log(new Date() + " : Admin authentication - " + (success ? "Success" : "Failure"));
+        socket.emit("adminAuthenticate", success);
     });
 
     // Admin save
@@ -174,11 +164,12 @@ _io.on("connection", (socket) => {
         const hashed = hashPassword(password);
 
         if (hashed === ADMIN_HASH) {
+            console.log(new Date() + " : Admin save - Success");
             fs.openSync(`${QUERIES_PATH}/${SAVE_FILENAME}`, "w");
             socket.emit("adminSave", true);
         }
         else {
-            fs.openSync(`${QUERIES_PATH}/${HALT_FILENAME}`, "w");
+            console.log(new Date() + " : Admin save - Failure");
             socket.emit("adminSave", false);
         }
     });
@@ -188,10 +179,12 @@ _io.on("connection", (socket) => {
         const hashed = hashPassword(password);
 
         if (hashed === ADMIN_HASH) {
+            console.log(new Date() + " : Admin halt - Success");
             fs.openSync(`${QUERIES_PATH}/${HALT_FILENAME}`, "w");
             socket.emit("adminHalt", true);
         }
         else {
+            console.log(new Date() + " : Admin halt - Failure");
             socket.emit("adminHalt", false);
         }
     });
@@ -199,7 +192,7 @@ _io.on("connection", (socket) => {
     // Get query images
     socket.on("getQueryImages", (pageNumber) => {
         // Get the image paths
-        const collection = _.chain(images).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
+        const collection = _.chain(IMAGES).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
 
         // Resize images and convert to buffer
         const promises = [];
@@ -214,13 +207,13 @@ _io.on("connection", (socket) => {
             }
 
             // Send to client
-            socket.emit("getQueryImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(images.length / PAGE_SIZE))));
+            socket.emit("getQueryImages", new Envelope(collection, new Pagination(pageNumber, Math.ceil(IMAGES.length / PAGE_SIZE))));
         });
     });
 
     // Submit image query
     socket.on("imageQuery", (imagePaths, b, k, top) => {
-        console.log("User queried. b: " + b + " | k: " + k + " | IDs: " + imagePaths);
+        console.log(new Date() + " : User queried. b: " + b + " | k: " + k + " | #Images: " + imagePaths.length);
 
         // Make sure variables have values
         if (!b | !k | !top | !imagePaths) {
@@ -260,17 +253,26 @@ _io.on("connection", (socket) => {
     socket.on("getBatchResults", (pageNumber) => {
         // Batches
         let items = [];
+        let running_id = "";
 
         // Add the running batch, if any
-        if (RUNNING_BATCH.length) {
-            items.push(RUNNING_BATCH[RUNNING_BATCH.length - 1]);
+        if (QUEUED_BATCHES.length) {
+            items.push(QUEUED_BATCHES[0]);
+            running_id = items[0].batchID.toString();
         }
 
         // Read queued directory
         fs.readdir(QUERIES_PATH)
             .then(pending_batches => {
                 // Only list files, not directories
-                const files = pending_batches.filter(f => fs.statSync(`${QUERIES_PATH}/${f}`).isFile() && f.includes(".batch") && !f.includes(SAVE_FILENAME) && !f.includes(HALT_FILENAME));
+                const files = pending_batches
+                    .filter(f =>
+                        fs.statSync(`${QUERIES_PATH}/${f}`).isFile() && // Only files
+                        f.includes(".batch") && // Only .batch
+                        !f.includes(SAVE_FILENAME) && // Not save file
+                        !f.includes(HALT_FILENAME) && // Not halt file
+                        f.slice(0, -6) !== running_id // Not running batch
+                    );
 
                 // Take a subset for pagination
                 const collection = _.chain(files).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
@@ -350,8 +352,6 @@ _io.on("connection", (socket) => {
 
     // Get header info of result
     socket.on("getBatchInfo", batchID => {
-        console.log("Batch info for " + batchID);
-
         fs.readFile(`${QUERIES_PATH}/${batchID}.batch`)
             .then(contents => {
                 // Get lines and strip away empty lines
@@ -500,7 +500,6 @@ _io.on("connection", (socket) => {
 
                 sharp(header[0]).resize(300).min().toFormat("jpg").toBuffer()
                     .then(buffer => {
-                        console.log(header);
                         const image = new BatchImage(imageID, "data:image/jpg;base64, " + buffer.toString("base64"), header[1]);
 
                         socket.emit("getBatchImage", image);
@@ -556,20 +555,20 @@ _io.on("connection", (socket) => {
                 socket.emit("getResultImages", false);
             });
     });
-
-    // Disconnect
-    socket.on("disconnect", () => {
-        users.splice(users.indexOf(socket), 1);
-        console.log("User: " + socket.id + " disconnected!");
-    });
 });
 
 _http.listen(PORT, () => {
-    console.log("Listening on localhost:%d", PORT);
+    console.log(new Date() + " : Listening on localhost:%d", PORT);
 });
 
+["SIGINT", "SIGTERM", "SIGQUIT"]
+.forEach(signal => process.on(signal, () => {
+    result_watcher.close();
+    console.log(new Date() + " : EXITING");
+    process.exit();
+}));
+
 process.on("SIGINT", () => {
-    query_watcher.close();
     result_watcher.close();
     console.log("EXITING");
     process.exit();
