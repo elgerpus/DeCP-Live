@@ -131,4 +131,37 @@ export class SocketService {
 
         return observable;
     }
+
+    adminAuthenticate(password: string): Observable<boolean> {
+        const observable = new Observable<boolean>(observer => {
+            this.socket.emit("adminAuthenticate", password);
+            this.socket.on("adminAuthenticate", success => {
+                observer.next(success);
+            });
+        });
+
+        return observable;
+    }
+
+    adminSave(password: string): Observable<boolean> {
+        const observable = new Observable<boolean>(observer => {
+            this.socket.emit("adminSave", password);
+            this.socket.on("adminSave", success => {
+                observer.next(success);
+            });
+        });
+
+        return observable;
+    }
+
+    adminHalt(password: string): Observable<boolean> {
+        const observable = new Observable<boolean>(observer => {
+            this.socket.emit("adminHalt", password);
+            this.socket.on("adminHalt", success => {
+                observer.next(success);
+            });
+        });
+
+        return observable;
+    }
 }
