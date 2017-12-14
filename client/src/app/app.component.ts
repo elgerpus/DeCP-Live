@@ -10,10 +10,9 @@ import { UtilitiesService } from "./utilities.service";
     styleUrls: ["./app.component.scss"]
 })
 export class AppComponent implements OnInit, OnDestroy {
-    title = "DeCP";
 
     constructor(
-        private utilities: UtilitiesService,
+        public utilities: UtilitiesService,
         private socketService: SocketService,
         private toastService: MzToastService
     ) { }
