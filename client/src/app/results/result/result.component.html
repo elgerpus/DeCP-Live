@@ -1,116 +1,161 @@
 <div class="container">
     <div class="row">
         <div class="col s12">
-            <h2>Result - {{ resultID }}</h2>
+            <h2>Result - {{ batchID }}</h2>
         </div>
     </div>
 
-    <!-- Queued -->
-    <div *ngIf="status === 0">
-        <mz-card>
-            <mz-card-content>
-                <div class="row">
-                    <div class="col s12 center">
-                        <h4>Queued</h4>
+    <div *ngIf="infoLoaded">
+        <!-- Queued -->
+        <div *ngIf="result.status === 0">
+            <mz-card>
+                <mz-card-content>
+                    <div class="row">
+                        <div class="col s12 center">
+                            <h4>Queued</h4>
+                        </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col s12 center">
-                        <p>This batch is number {{ queueNumber }} in the queue</p>
-                        <p>Estimated time until start: {{ eta }} min</p>
+                    <div class="row">
+                        <div class="col s12 center">
+                            <p>This batch is number {{ result.queueNumber }} in the queue</p>
+                            <p>Estimated time until start: {{ result.eta }} min</p>
+                        </div>
                     </div>
-                </div>
-            </mz-card-content>
-        </mz-card>
-    </div>
-
-    <!-- Running -->
-    <div *ngIf="status === 1">
-        <mz-card>
-            <mz-card-content>
-                <div class="row">
-                    <div class="col s12 center">
-                        <h4>Running</h4>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col s12 center">
-                        <mz-spinner [color]="'blue'" [size]="'big'">
-                        </mz-spinner>
-                    </div>
-                </div>
-            </mz-card-content>
-        </mz-card>
-    </div>
-
-    <!-- Done -->
-    <div *ngIf="status === 2">
-        <div class="row">
-            <div class="col s6">
-                <mz-switch-container>
-                    <input mz-switch id="mine-all" [off]="'All'" [on]="'Mine'" type="checkbox">
-                </mz-switch-container>
-            </div>
-
-            <div class="col s6">
-                <mz-switch-container class="right">
-                    <input mz-switch id="grid-rows" [off]="'Rows'" [on]="'Grid'" type="checkbox" [(ngModel)]="grid">
-                </mz-switch-container>
-            </div>
+                </mz-card-content>
+            </mz-card>
         </div>
 
-        <mz-card>
-            <mz-card-title>
-                <div class="row">
-                    <div class="col s12">
-                        Select an image
+        <!-- Running -->
+        <div *ngIf="result.status === 1">
+            <mz-card>
+                <mz-card-content>
+                    <div class="row">
+                        <div class="col s12 center">
+                            <h4>Running</h4>
+                        </div>
                     </div>
+
+                    <div class="row">
+                        <div class="col s12 center">
+                            <mz-spinner [color]="'blue'" [size]="'big'">
+                            </mz-spinner>
+                        </div>
+                    </div>
+                </mz-card-content>
+            </mz-card>
+        </div>
+
+        <!-- Done -->
+        <div *ngIf="result.status === 2">
+            <div class="row">
+                <div class="col s12">
+                    <blockquote class="full-width flow-text">
+                        <table>
+                            <thead>
+                                <th>B</th>
+                                <th>K</th>
+                                <th>Total time</th>
+                                <th>Time per image</th>
+                            </thead>
+                            <tbody>
+                                <td>{{ result.b }}</td>
+                                <td>{{ result.k }}</td>
+                                <td>{{ result.totalTime }}s</td>
+                                <td>{{ result.timePerImage.toFixed(2) }}s</td>
+                            </tbody>
+                        </table>
+                    </blockquote>
                 </div>
-            </mz-card-title>
-            <mz-card-content>
-                <div *ngIf="grid" class="row">
-                    <div *ngFor="let image of pages[pagination.currentPage-1]" class="col s3" [routerLink]="[1]">
-                        <div class="overlay-container hoverable">
-                            <img src="{{image}}">
-                            <div class="overlay">
-                                <div class="row">
-                                    <div class="col s12">
-                                        <span>ID: {{ utilities.getImageID(image) }}</span>
+            </div>
+            <div class="row">
+                <div class="col s6 offset-s6">
+                    <mz-switch-container class="right">
+                        <input mz-switch id="grid-rows" [off]="'Rows'" [on]="'Grid'" type="checkbox" [(ngModel)]="grid">
+                    </mz-switch-container>
+                </div>
+            </div>
+
+            <mz-card>
+                <mz-card-title>
+                    <div class="row">
+                        <div class="col s12">
+                            Select an image
+                        </div>
+                    </div>
+                </mz-card-title>
+                <mz-card-content>
+                    <div *ngIf="!gridLoaded && !tableLoaded" class="row">
+                        <div class="col s12 center">
+                            <mz-spinner [color]="'blue'" [size]="'big'">
+                            </mz-spinner>
+                        </div>
+                    </div>
+
+                    <div *ngIf="gridLoaded || tableLoaded">
+                        <div *ngIf="grid && gridLoaded">
+                            <div *ngFor="let imageSet of imagesGrid; let i = index" class="table-row row">
+                                <div *ngFor="let image of imageSet" class="col s3">
+                                    <div class="overlay-container hoverable" [routerLink]="[image.imageID]">
+                                        <img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)">
+                                        <div class="overlay">
+                                            <div class="row truncate">
+                                                <div class="col s12">
+                                                    <span>ID: {{ utilities.getImageID(image.imageID) }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div *ngIf="!grid" class="row scrollable">
-                    <div class="col s12">
-                        <table class="responsive-table striped">
-                            <thead>
-                                <tr>
-                                    <th>Image</th>
-                                    <th>ID</th>
-                                </tr>
-                            </thead>
+                        <div *ngIf="!grid && tableLoaded && topLoaded" class="row scrollable">
+                            <div class="col s12">
+                                <table class="responsive-table centered striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th>
+                                            <th>ID</th>
+                                            <th>Top results</th>
+                                            <th></th>
+                                            <th></th>
+                                            <th></th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
 
-                            <tbody>
-                                <tr *ngFor="let image of pages[pagination.currentPage-1]" [routerLink]="[1]">
-                                    <td><img src="{{image}}"></td>
-                                    <td>{{ utilities.getImageID(image) }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    <tbody>
+                                        <tr *ngFor="let image of imagesTable; let i = index" [routerLink]="[image.imageID]">
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(image.imageString)"></td>
+                                            <td><span class="truncate">{{ utilities.getImageID(image.imageID) }}</span></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][0].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][1].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][2].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][3].imageString)"></td>
+                                            <td><img [src]="domSanitizer.bypassSecurityTrustUrl(imagesTop[i][4].imageString)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                <div class="row">
-                    <div class="col s12 center">
-                        <app-pagination [pagination]="pagination" [pageNumbers]="pageNumbers" (onPage)="onPage($event)"></app-pagination>
+                        <div class="row">
+                            <div class="col s12 center">
+                                <app-pagination [pagination]="pagination" [pageNumbers]="pageNumbers" (onPage)="onPage($event)"></app-pagination>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </mz-card-content>
-        </mz-card>
+                </mz-card-content>
+            </mz-card>
+        </div>
     </div>
+
+    <div *ngIf="!infoLoaded" class="row">
+        <div class="col s12 center">
+            <mz-spinner [color]="'blue'" [size]="'big'">
+            </mz-spinner>
+        </div>
+    </div>
+
 </div>

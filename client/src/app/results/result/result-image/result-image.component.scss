@@ -14,11 +14,13 @@
 }
 
 // Cap image size
-img {
-    max-width: 100%;
-    max-height: 10em;
-    margin: 0 auto;
-    display: block;
+.overlay-container {
+    img {
+        max-width: 100%;
+        max-height: 10em;
+        margin: 0 auto;
+        display: block;
+    }
 }
 
 tbody>tr {
@@ -28,7 +30,11 @@ tbody>tr {
     }
 
     img {
-        max-height: 2.5em;
+        max-height: 3em;
         margin: 0;
     }
+}
+
+td, th {
+    max-width: 0;
 }

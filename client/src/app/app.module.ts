@@ -46,11 +46,11 @@ import { PaginationComponent } from "./subcomponents/pagination/pagination.compo
                 component: ResultsComponent
             },
             {
-                path: "results/:resultID",
+                path: "results/:batchID",
                 component: ResultComponent
             },
             {
-                path: "results/:resultID/:imageID",
+                path: "results/:batchID/:imageID",
                 component: ResultImageComponent
             }
         ])
