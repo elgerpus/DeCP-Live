@@ -1,0 +1,68 @@
+<div class="container">
+    <div class="row">
+        <div class="col s12">
+            <h2>Admin</h2>
+        </div>
+    </div>
+
+    <!-- Authentication -->
+    <mz-card *ngIf="!authenticated">
+        <mz-card-title>
+            <div class="row">
+                <div class="col s12">
+                    Authenticate
+                </div>
+            </div>
+        </mz-card-title>
+        <mz-card-content>
+            <form *ngIf="!authenticating" (submit)="onAuthenticate()">
+                <div class="row">
+                    <div class="col s4 offset-s4">
+                        <mz-input-container>
+                            <input mz-input [label]="'Password'" name="password" type="password" [(ngModel)]="password">
+                        </mz-input-container>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col s4 offset-s4">
+                        <button mz-button class="indigo lighten-2 full-width" type="submit" [large]="true" [disabled]="!password.length">
+                            Authenticate
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div *ngIf="authenticating" class="row">
+                <div class="col s12 center">
+                    <mz-spinner [color]="'blue'" [size]="'big'">
+                    </mz-spinner>
+                </div>
+            </div>
+        </mz-card-content>
+    </mz-card>
+
+    <!-- Panel -->
+    <mz-card *ngIf="authenticated">
+        <mz-card-title>
+            <div class="row">
+                <div class="col s12">
+                    Panel
+                </div>
+            </div>
+        </mz-card-title>
+        <mz-card-content>
+            <div class="row">
+                <div class="col s6">
+                    <button mz-button class="indigo lighten-2 full-width" [large]="true" [disabled]="saving" (click)="onSave()">
+                        Save database
+                    </button>
+                </div>
+                <div class="col s6">
+                    <button mz-button class="red darken-4 lighten-2 full-width" [large]="true" [disabled]="halting" (click)="onHalt()">
+                        Halt
+                    </button>
+                </div>
+            </div>
+        </mz-card-content>
+    </mz-card>
+</div>

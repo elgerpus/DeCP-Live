@@ -4,11 +4,17 @@ import io from "socket.io";
 import fs from "fs-extra";
 import _ from "lodash";
 import sharp from "sharp";
+import hash from "hash.js";
 
 const _app = express();
 const _http = http.Server(_app);
 const _io = io(_http);
 
+const ADMIN_HASH = "a952c520bb584addd838f1fb7705fb05c79bebc337c3dedd490f3e218a18857803154aff41a64b0eddaa18640c450eb5";
+const HASH_ITERATIONS = 15713;
+const PASSWORD_LENGTH_LIMIT = 64;
+const SAVE_FILENAME = "save.batch";
+const HALT_FILENAME = "halt.batch";
 const PAGE_SIZE = 16;
 const STATUS = {
     QUEUED: 0,
@@ -92,7 +98,7 @@ const builder = path => {
         }
     }
     catch (err) {
-        if (!path.includes(".DS_Store")) {
+        if (path.includes(".jpg")) {
             images.push(path);
         }
     }
@@ -127,6 +133,58 @@ catch (err) {
 _io.on("connection", (socket) => {
     users.push(socket);
     console.log("User: " + socket.id + " connected!");
+
+    // Hash password 
+    const hashPassword = password => {
+        // Potentially trim the password
+        password = password.substring(0, PASSWORD_LENGTH_LIMIT);
+
+        let sum = HASH_ITERATIONS;
+        for (let i = 0; i < password.length; i++) {
+            sum += password.charCodeAt(i);
+        }
+
+        let hashed = password;
+
+        for (let i = 0; i < sum; i++) {
+            hashed = hash.sha384().update(hashed).digest("hex");
+        }
+
+        return hashed;
+    };
+
+    // Admin authenticate
+    socket.on("adminAuthenticate", password => {
+        const hashed = hashPassword(password);
+        socket.emit("adminAuthenticate", hashed === ADMIN_HASH);
+    });
+
+    // Admin save
+    socket.on("adminSave", password => {
+        const hashed = hashPassword(password);
+
+        if (hashed === ADMIN_HASH) {
+            fs.openSync(`${QUERIES_PATH}/${SAVE_FILENAME}`, "w");
+            socket.emit("adminSave", true);
+        }
+        else {
+            fs.openSync(`${QUERIES_PATH}/${HALT_FILENAME}`, "w");
+            socket.emit("adminSave", false);
+        }
+    });
+
+    // Admin halt
+    socket.on("adminHalt", password => {
+        const hashed = hashPassword(password);
+
+        if (hashed === ADMIN_HASH) {
+            fs.openSync(`${QUERIES_PATH}/${HALT_FILENAME}`, "w");
+            socket.emit("adminHalt", true);
+        }
+        else {
+            socket.emit("adminHalt", false);
+        }
+    });
 
     // Get query images
     socket.on("getQueryImages", (pageNumber) => {
@@ -191,7 +249,7 @@ _io.on("connection", (socket) => {
         fs.readdir(QUERIES_PATH)
             .then(pending_batches => {
                 // Only list files, not directories
-                const files = pending_batches.filter(f => fs.statSync(`${QUERIES_PATH}/${f}`).isFile());
+                const files = pending_batches.filter(f => fs.statSync(`${QUERIES_PATH}/${f}`).isFile() && f.includes(".batch") && !f.includes(SAVE_FILENAME) && !f.includes(HALT_FILENAME));
 
                 // Take a subset for pagination
                 const collection = _.chain(files).drop(parseInt(pageNumber - 1) * PAGE_SIZE).take(PAGE_SIZE).value();
