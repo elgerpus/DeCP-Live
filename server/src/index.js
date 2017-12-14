@@ -5,11 +5,14 @@ import fs from "fs-extra";
 import _ from "lodash";
 import sharp from "sharp";
 import hash from "hash.js";
+import chokidar from "chokidar";
 
+// Setup
 const _app = express();
 const _http = http.Server(_app);
 const _io = io(_http);
 
+// Constants
 const ADMIN_HASH = "a952c520bb584addd838f1fb7705fb05c79bebc337c3dedd490f3e218a18857803154aff41a64b0eddaa18640c450eb5";
 const HASH_ITERATIONS = 15713;
 const PASSWORD_LENGTH_LIMIT = 64;
@@ -21,7 +24,10 @@ const STATUS = {
     RUNNING: 1,
     DONE: 2
 };
+const RUNNING_BATCH = [];
+const QUEUED_BATCHES = [];
 
+// Arguments
 if (process.argv.length !== 6) {
     console.log("Please supply only the port, images path, queries path and results path!");
     process.exit(-1);
@@ -32,6 +38,7 @@ const IMAGES_PATH = process.argv[3];
 const QUERIES_PATH = process.argv[4];
 const RESULTS_PATH = process.argv[5];
 
+// Classes
 class Image {
     constructor(imageID, imageString) {
         this.imageID = imageID;
@@ -89,6 +96,7 @@ fs.ensureDirSync(IMAGES_PATH);
 fs.ensureDirSync(QUERIES_PATH);
 fs.ensureDirSync(RESULTS_PATH);
 
+// Build query image paths
 const builder = path => {
     try {
         const items = fs.readdirSync(`${IMAGES_PATH}${path}`);
@@ -115,21 +123,23 @@ catch (err) {
     console.log(new Date() + ": " + err);
 }
 
-// fs.readdir(__dirname + "/images/1holidays", (err, dir) => {
-//     if (err) {
-//         console.log("Couldn't open images!");
-//         process.exit(-1);
-//     }
+// Watchers
+const query_watcher = chokidar.watch(QUERIES_PATH);
+query_watcher.on("unlink", () => {
+    // Add to running
+    RUNNING_BATCH.push(QUEUED_BATCHES.shift());
+});
 
-//     console.log("Adding image paths...");
+const result_watcher = chokidar.watch(RESULTS_PATH, {
+    ignoreInitial: true
+});
+result_watcher.on("addDir", () => {
+    // Remove from running
+    RUNNING_BATCH.shift();
+    _io.emit("newResult", true);
+});
 
-//     for (let i = 0; i < dir.length; i++) {
-//         images.push(__dirname + "/images/1holidays/" + dir[i]);
-//     }
-
-//     console.log("Image paths added");
-// });
-
+// Sockets
 _io.on("connection", (socket) => {
     users.push(socket);
     console.log("User: " + socket.id + " connected!");
@@ -238,6 +248,9 @@ _io.on("connection", (socket) => {
                 return;
             }
 
+            // Add query to queued batches
+            QUEUED_BATCHES.push(new Result(id, STATUS.RUNNING, b, k, 0, 0, imagePaths.length));
+
             // Emit to the client
             socket.emit("imageQuery", true);
         });
@@ -245,6 +258,14 @@ _io.on("connection", (socket) => {
 
     // Get results
     socket.on("getBatchResults", (pageNumber) => {
+        // Batches
+        let items = [];
+
+        // Add the running batch, if any
+        if (RUNNING_BATCH.length) {
+            items.push(RUNNING_BATCH[RUNNING_BATCH.length - 1]);
+        }
+
         // Read queued directory
         fs.readdir(QUERIES_PATH)
             .then(pending_batches => {
@@ -263,7 +284,6 @@ _io.on("connection", (socket) => {
                 Promise.all(promises)
                     .then(resultFiles => {
                         // Parse the files
-                        let items = [];
                         for (let i = 0; i < resultFiles.length; i++) {
                             const lines = resultFiles[i].toString().split("\n").filter(x => x);
                             const id = collection[i].slice(0, -6);
@@ -546,4 +566,11 @@ _io.on("connection", (socket) => {
 
 _http.listen(PORT, () => {
     console.log("Listening on localhost:%d", PORT);
+});
+
+process.on("SIGINT", () => {
+    query_watcher.close();
+    result_watcher.close();
+    console.log("EXITING");
+    process.exit();
 });

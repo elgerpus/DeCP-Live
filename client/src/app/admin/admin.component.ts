@@ -2,6 +2,7 @@ import { Component, OnInit } from "@angular/core";
 import { MzToastService } from "ng2-materialize";
 
 import { SocketService } from "../socket.service";
+import { UtilitiesService } from "../utilities.service";
 
 @Component({
     selector: "app-admin",
@@ -16,7 +17,11 @@ export class AdminComponent implements OnInit {
     halting: boolean;
     password: string;
 
-    constructor(private socketService: SocketService, private toastService: MzToastService) { }
+    constructor(
+        private utilities: UtilitiesService,
+        private socketService: SocketService,
+        private toastService: MzToastService
+    ) { }
 
     ngOnInit() {
         this.authenticating = false;
@@ -31,17 +36,17 @@ export class AdminComponent implements OnInit {
         this.socketService.adminAuthenticate(this.password).first().subscribe(
             success => {
                 if (success) {
-                    this.toastService.show("Authenticated!", 4000);
+                    this.toastService.show("Authenticated!", this.utilities.TOAST_DURATION);
                 }
                 else {
-                    this.toastService.show("Incorrect password!", 4000);
+                    this.toastService.show("Incorrect password!", this.utilities.TOAST_DURATION);
                 }
 
                 this.authenticated = success;
                 this.authenticating = false;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             });
     }
@@ -51,16 +56,16 @@ export class AdminComponent implements OnInit {
         this.socketService.adminSave(this.password).first().subscribe(
             success => {
                 if (success) {
-                    this.toastService.show("Saved!", 4000);
+                    this.toastService.show("Saved!", this.utilities.TOAST_DURATION);
                 }
                 else {
-                    this.toastService.show("Incorrect password!", 4000);
+                    this.toastService.show("Incorrect password!", this.utilities.TOAST_DURATION);
                 }
 
                 this.saving = false;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             });
     }
@@ -70,16 +75,16 @@ export class AdminComponent implements OnInit {
         this.socketService.adminHalt(this.password).first().subscribe(
             success => {
                 if (success) {
-                    this.toastService.show("Halted!", 4000);
+                    this.toastService.show("Halted!", this.utilities.TOAST_DURATION);
                 }
                 else {
-                    this.toastService.show("Incorrect password!", 4000);
+                    this.toastService.show("Incorrect password!", this.utilities.TOAST_DURATION);
                 }
 
                 this.halting = false;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             });
     }

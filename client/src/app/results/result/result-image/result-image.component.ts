@@ -62,7 +62,7 @@ export class ResultImageComponent implements OnInit {
                 this.batchImageLoaded = true;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
@@ -101,7 +101,7 @@ export class ResultImageComponent implements OnInit {
                 this.loaded = true;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
