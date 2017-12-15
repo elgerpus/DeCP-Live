@@ -15,6 +15,7 @@ import { ResultsComponent } from "./results/results.component";
 import { ResultComponent } from "./results/result/result.component";
 import { ResultImageComponent } from "./results/result/result-image/result-image.component";
 import { PaginationComponent } from "./subcomponents/pagination/pagination.component";
+import { AdminComponent } from "./admin/admin.component";
 
 @NgModule({
     declarations: [
@@ -24,7 +25,8 @@ import { PaginationComponent } from "./subcomponents/pagination/pagination.compo
         ResultsComponent,
         ResultComponent,
         ResultImageComponent,
-        PaginationComponent
+        PaginationComponent,
+        AdminComponent
     ],
     imports: [
         BrowserModule,
@@ -36,6 +38,10 @@ import { PaginationComponent } from "./subcomponents/pagination/pagination.compo
                 path: "",
                 pathMatch: "full",
                 component: HomeComponent
+            },
+            {
+                path: "admin",
+                component: AdminComponent
             },
             {
                 path: "query",

@@ -91,17 +91,17 @@ export class QueryComponent implements OnInit {
         this.socketService.sendQueryImages(Array.from(this.selected), this.b, this.k, this.top).first().subscribe(
             success => {
                 if (success) {
-                    this.toastService.show("Query succeeded!", 4000);
+                    this.toastService.show("Query succeeded!", this.utilities.TOAST_DURATION);
                     this.selected.clear();
                     this.resetValues();
                     this.assignSelectAll();
                 }
                 else {
-                    this.toastService.show("Query failed!", 4000);
+                    this.toastService.show("Query failed!", this.utilities.TOAST_DURATION);
                 }
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
@@ -150,7 +150,7 @@ export class QueryComponent implements OnInit {
                 this.assignSelectAll();
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );

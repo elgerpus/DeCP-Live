@@ -5,6 +5,7 @@ import { IPagination } from "./interfaces/ipagination";
 @Injectable()
 export class UtilitiesService {
 
+    TITLE = "DeCP Live";
     SERVER_URL = "http://localhost:32000/";
     PAGINATION_OFFSET = 3;
     TOP_IMAGES = 5;
@@ -13,6 +14,7 @@ export class UtilitiesService {
     DEFAULT_TOP = 100;
     SELECT_ALL_TEXT = "Select all on page";
     DESELECT_ALL_TEXT = "Deselect all on page";
+    TOAST_DURATION = 3000;
 
     constructor() { }
 

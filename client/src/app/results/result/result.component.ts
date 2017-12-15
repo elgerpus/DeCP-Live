@@ -68,7 +68,7 @@ export class ResultComponent implements OnInit {
                 this.infoLoaded = true;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
@@ -117,7 +117,7 @@ export class ResultComponent implements OnInit {
                 this.tableLoaded = true;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
@@ -131,7 +131,7 @@ export class ResultComponent implements OnInit {
                 this.topLoaded = true;
             },
             error => {
-                this.toastService.show("Unknown error!", 4000);
+                this.toastService.show("Unknown error!", this.utilities.TOAST_DURATION);
                 console.log(error);
             }
         );
