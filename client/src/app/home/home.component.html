@@ -3,7 +3,8 @@
         <div class="container">
             <h1 class="header center white-text">DeCP Live</h1>
             <div class="row center">
-                <h5 class="header col s12 light white-text">A high-throughput CBIR system</h5>
+                <h5 class="header col s12 light white-text">
+                    A web-interface for DeCP, a high-throughput CBIR system</h5>
             </div>
             <div class="row center">
                 <a mz-button [large]="'true'" routerLink="query">
@@ -25,12 +26,14 @@
         <div class="row">
             <div class="col s12 m4">
                 <div class="icon-block">
-                    <h2 class="center brown-text"><i class="material-icons">archive</i></h2>
+                    <h2 class="center brown-text"><i class="material-icons">change history</i></h2>
                     <h5 class="center">Deep hierarchical index</h5>
 
                     <p class="light">
-                        DeCP uses a deep hierarchical index structure over thousands or millions of clusters. 
-                        The deep hierarchy minimizes 
+                        DeCP uses a deep hierarchical index structure over thousands or millions of clusters.
+                        Using a deep deep hierarchy is striking a balance between performance and result quality.
+                        The largest index used to date had 20 million clusters, was five levels deep, and was designed to index 300 - 500 billion high-dimensional features. <br>
+                        <a href="https://dl.acm.org/citation.cfm?id=3083200">Towards Engineering a Web-Scale Multimedia Service: A Case Study Using Spark</a>
                     </p>
                 </div>
             </div>
@@ -53,7 +56,7 @@
                     <h5 class="center">Could-based CBIR system</h5>
 
                     <p class="light">
-                        DeCP has been implemented on both Hadoop and Spark, two of the worlds most popular automatically distributed computing frameworks (ADCFs), and the Spark implementation has been made publicly available <a href="http://decplive.net">DeCP git repository</a> 
+                        DeCP has been implemented on both Hadoop and Spark, two of the worlds most popular automatically distributed computing frameworks (ADCFs), and the Spark implementation has been made publicly available.<br> <a href="http://decplive.net">DeCP git repository</a> 
                     </p>
                 </div>
             </div>
@@ -69,7 +72,28 @@
             <div class="row center">
                 <h5 class="header col s12 light white-text">
                     Towards Engineering a Web-Scale Multimedia Service: A Case Study Using Spark
+                    <br>
                 </h5>
+                <table>
+                    <tr>
+                        <td align="center">Gylfi Þór</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Laurent</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Björn Þór</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Michael J.</td>
+                    </tr>
+                    <tr>
+                        <td align="center">Guðmundsson</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Amsaleg</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Jónsson</td>
+                        <td align="center">&nbsp;</td>
+                        <td align="center">Franklin</td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>
@@ -85,10 +109,10 @@
             <div class="col s12 center">
                 <h3><i class="mdi-content-send brown-text"></i></h3>
                 <h4>Abstract</h4>
-                <p class="left-align light">
+                <p id="abstract" class="left-align light">
 Computing power has now become abundant with multi-core machines, grids and clouds, but it remains a challenge to harness the available power and move towards gracefully handling web-scale datasets. Several researchers have used automatically distributed computing frameworks, notably Hadoop and Spark, for processing multimedia material, but mostly using small collections on small clusters. In this paper, we describe the engineering process for a prototype of a (near) web-scale multimedia service using the Spark framework running on the AWS cloud service. We present experimental results using up to 43 billion SIFT feature vectors from the public YFCC 100M collection, making this the largest high-dimensional feature vector collection reported in the literature. The design of the prototype and performance results demonstrate both the flexibility and scalability of the Spark framework for implementing multimedia services.
 <br>
-<a href="https://dl.acm.org/citation.cfm?id=3083200">Towards Engineering a Web-Scale Multimedia Service: A Case Study Using Spark</a>
+<a href="https://dl.acm.org/citation.cfm?id=3083200">Published in the proceedings of the 8th ACM conference on multimedia systems (MMSys) in 2017.</a>
                 </p>
             </div>
         </div>
@@ -101,7 +125,9 @@ Computing power has now become abundant with multi-core machines, grids and clou
     <div class="section valign-wrapper">
         <div class="container">
             <div class="row center">
-                <h5 class="header col s12 light white-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit</h5>
+                <h5 class="header col s12 light white-text">
+                    A picture can say more then a thousand "key"-words
+                </h5>
             </div>
         </div>
     </div>
