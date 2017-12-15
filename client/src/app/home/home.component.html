@@ -25,30 +25,36 @@
         <div class="row">
             <div class="col s12 m4">
                 <div class="icon-block">
-                    <h2 class="center brown-text"><i class="material-icons">flash_on</i></h2>
-                    <h5 class="center">High throughput</h5>
+                    <h2 class="center brown-text"><i class="material-icons">archive</i></h2>
+                    <h5 class="center">Deep hierarchical index</h5>
 
-                    <p class="light">DeCP focuses on large batches of images rather than single image queries</p>
+                    <p class="light">
+                        DeCP uses a deep hierarchical index structure over thousands or millions of clusters. 
+                        The deep hierarchy minimizes 
+                    </p>
                 </div>
             </div>
 
             <div class="col s12 m4">
                 <div class="icon-block">
-                    <h2 class="center brown-text"><i class="material-icons">group</i></h2>
-                    <h5 class="center">Lorem</h5>
+                    <h2 class="center brown-text"><i class="material-icons">search</i></h2>
+                    <h5 class="center">High throughput batch search</h5>
 
-                    <p class="light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque id nunc nec volutpat. Etiam pellentesque tristique arcu, non consequat magna fermentum ac. Cras ut ultricies eros. Maecenas eros justo, ullamcorper a sapien
-                        id, viverra ultrices eros. Morbi sem neque, posuere et pretium eget, bibendum sollicitudin lacus.</p>
+                    <p class="light">
+                        DeCP focuses on searching large batches of images rather than single image queries, sacrificing response time for high throughput. 
+                        The larger the batch the higher the throughput and batches of thousands of tens of thousands of images have been used in experiments and evaluation. 
+                    </p>
                 </div>
             </div>
 
             <div class="col s12 m4">
                 <div class="icon-block">
-                    <h2 class="center brown-text"><i class="material-icons">settings</i></h2>
-                    <h5 class="center">Lorem</h5>
+                    <h2 class="center brown-text"><i class="material-icons">cloud</i></h2>
+                    <h5 class="center">Could-based CBIR system</h5>
 
-                    <p class="light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque id nunc nec volutpat. Etiam pellentesque tristique arcu, non consequat magna fermentum ac. Cras ut ultricies eros. Maecenas eros justo, ullamcorper a sapien
-                        id, viverra ultrices eros. Morbi sem neque, posuere et pretium eget, bibendum sollicitudin lacus.</p>
+                    <p class="light">
+                        DeCP has been implemented on both Hadoop and Spark, two of the worlds most popular automatically distributed computing frameworks (ADCFs), and the Spark implementation has been made publicly available <a href="http://decplive.net">DeCP git repository</a> 
+                    </p>
                 </div>
             </div>
         </div>
@@ -61,7 +67,9 @@
     <div class="section valign-wrapper">
         <div class="container">
             <div class="row center">
-                <h5 class="header col s12 light white-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit</h5>
+                <h5 class="header col s12 light white-text">
+                    Towards Engineering a Web-Scale Multimedia Service: A Case Study Using Spark
+                </h5>
             </div>
         </div>
     </div>
@@ -76,10 +84,12 @@
         <div class="row">
             <div class="col s12 center">
                 <h3><i class="mdi-content-send brown-text"></i></h3>
-                <h4>Contact Us</h4>
-                <p class="left-align light">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam scelerisque id nunc nec volutpat. Etiam pellentesque tristique arcu, non consequat magna fermentum ac. Cras ut ultricies eros. Maecenas eros justo, ullamcorper a sapien id,
-                    viverra ultrices eros. Morbi sem neque, posuere et pretium eget, bibendum sollicitudin lacus. Aliquam eleifend sollicitudin diam, eu mattis nisl maximus sed. Nulla imperdiet semper molestie. Morbi massa odio, condimentum sed ipsum
-                    ac, gravida ultrices erat. Nullam eget dignissim mauris, non tristique erat. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;</p>
+                <h4>Abstract</h4>
+                <p class="left-align light">
+Computing power has now become abundant with multi-core machines, grids and clouds, but it remains a challenge to harness the available power and move towards gracefully handling web-scale datasets. Several researchers have used automatically distributed computing frameworks, notably Hadoop and Spark, for processing multimedia material, but mostly using small collections on small clusters. In this paper, we describe the engineering process for a prototype of a (near) web-scale multimedia service using the Spark framework running on the AWS cloud service. We present experimental results using up to 43 billion SIFT feature vectors from the public YFCC 100M collection, making this the largest high-dimensional feature vector collection reported in the literature. The design of the prototype and performance results demonstrate both the flexibility and scalability of the Spark framework for implementing multimedia services.
+<br>
+<a href="https://dl.acm.org/citation.cfm?id=3083200">Towards Engineering a Web-Scale Multimedia Service: A Case Study Using Spark</a>
+                </p>
             </div>
         </div>
 
