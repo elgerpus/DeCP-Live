@@ -100,6 +100,18 @@ main {
     overflow-y: auto;
 }
 
+.italic {
+    font-style: italic;
+}
+
+.justify {
+    text-align: justify;
+}
+
+.block {
+    display: block;
+}
+
 .table-row {
     display: table;
     width: 100%;
