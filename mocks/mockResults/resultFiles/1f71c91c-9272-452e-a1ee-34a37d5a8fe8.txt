@@ -1,4 +1,0 @@
-3:5:3:
-/path/to/resultDirs/1f71c91c-9272-452e-a1ee-34a37d5a8fe8/00200102.txt
-/path/to/resultDirs/1f71c91c-9272-452e-a1ee-34a37d5a8fe8/00200801.txt
-/path/to/resultDirs/1f71c91c-9272-452e-a1ee-34a37d5a8fe8/00202602.txt
