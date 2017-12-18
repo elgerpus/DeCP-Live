@@ -17,3 +17,7 @@
 img {
     max-width: 100%;
 }
+
+.gradient {
+    background: radial-gradient(ellipse closest-side, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 100%);
+}
