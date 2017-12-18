@@ -30,6 +30,12 @@ sudo npm install -g @angular/cli
 sudo yarn global add @angular/cli
 ```
 
+### Increase the number of files that can be used by watcher applications
+##### This is needed for both the Angular CLI in development mode as well as the folder watcher of the socket server.
+```
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+
 ### PM2 to run NodeJS applications
 * NPM:
 ```
@@ -74,7 +80,7 @@ sudo mkdir -p /var/www/YOURDOMAIN/public_html
 ### Change permission of the folder to the current user
 ##### Replace YOURDOMAIN with your desired domain. E.g. decplive.net
 ```
-sudo chown -R $USER:$USER /var/www/YOURDOMAIN/public_html
+sudo chown -R $USER:$USER /var/www/YOURDOMAIN
 ```
 
 ### Set appropriate permissions
@@ -160,3 +166,48 @@ sudo vim /etc/hosts
 ```
 curl YOURDOMAIN
 ```
+
+### Go into the 'client' directory and install all the NodeJS dependencies
+* NPM:
+```
+npm install
+```
+* Yarn:
+```
+yarn install
+```
+
+### Use the Angular CLI to do a production build of the website
+##### Replace YOURDOMAIN with your desired domain. E.g. decplive.net
+```
+ng build --prod --output-path /var/www/YOURDOMAIN/public_html
+```
+
+### Go one folder up and into the server directory. Install all the NodeJS dependencies for the server as well
+* NPM:
+```
+npm install
+```
+* Yarn:
+```
+yarn install
+```
+
+### Build the server application
+* NPM:
+```
+npm build
+```
+* Yarn:
+```
+yarn build
+```
+
+### Start the server using PM2
+##### Replace every instance of '/path/to' with the relevant path to these folders in your system
+##### The Angular Client uses port '32000' to connect to the server by default, so don't change this unless you also want to change it in the 'client/src/app/utilities.service.ts' file of the client. You have been warned
+```
+pm2 start dist/index.js --name "Enter some unique name here for the server" -- 32000 /path/to/images /path/to/queries /path/to/results
+```
+
+### You should now be able to access the Angular Client from any modern web browser
