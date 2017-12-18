@@ -129,12 +129,31 @@ IncludeOptional sites-enabled/*.conf
 ```
 
 ### Create the Virtual Host file
-##### An example config file will be supplied with the project under /apache/decplive.net.conf
 ##### Replace YOURDOMAIN with your desired domain. E.g. decplive.net
 ##### You may use your preferred editor
 ##### Vim is used here
 ```
 sudo vim /etc/httpd/sites-available/YOURDOMAIN.conf
+```
+
+### Insert this content
+##### Replace YOURDOMAIN with your desired domain. E.g. decplive.net
+```
+<VirtualHost *:80>
+    ServerName      www.YOURDOMAIN
+    ServerAlias     www.YOURDOMAIN YOURDOMAIN
+    DocumentRoot    /var/www/YOURDOMAIN/public_html
+
+    <Directory "/var/www/YOURDOMAIN/public_html">
+
+	RewriteEngine On
+        RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
+	RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
+	RewriteRule ^ - [L]
+	RewriteRule ^ /index.html
+
+    </Directory>
+</VirtualHost>
 ```
 
 ### Enable the site
