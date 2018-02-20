@@ -53,6 +53,7 @@ The other lines are absolute paths to the result images and the number of featur
 * [Yarn](https://yarnpkg.com/) - Dependency management
 * [Apache](https://httpd.apache.org/) - HTTP server
 * [Spark](https://spark.apache.org/) - Data processing
+* [BoofCV](https://boofcv.org/) - SIFT Feature Extraction
 
 ## Authors
 
