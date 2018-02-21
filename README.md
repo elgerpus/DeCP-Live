@@ -1,4 +1,4 @@
-# DeCP Live
+# DeCP-Live
 
 A web-interface for DeCP, a high-throughput CBIR system
 
@@ -17,7 +17,7 @@ A web-interface for DeCP, a high-throughput CBIR system
 
 ## Getting Started
 
-In order to run DeCP and DeCP Live on your own machine, you will need to follow the setup guide specified in the [INSTALL.md](INSTALL.md) file.
+In order to run DeCP and DeCP-Live on your own machine, you will need to either install it on your own machine (follow the setup guide specified in the [INSTALL.md](INSTALL.md) file) or download the pre-installed and ready-to-go [virtual machine](http://link.to.vm).
 
 ## Syntax
 
