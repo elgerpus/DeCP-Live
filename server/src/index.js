@@ -557,7 +557,7 @@ _io.on("connection", (socket) => {
     });
 });
 
-_http.listen(PORT, () => {
+_http.listen(PORT, "0.0.0.0", () => {
     console.log(new Date() + " : Listening on localhost:%d", PORT);
 });
 
