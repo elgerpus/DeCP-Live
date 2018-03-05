@@ -20,7 +20,7 @@ A web-interface for DeCP, a high-throughput CBIR system
 In order to run DeCP and DeCP-Live on your own machine, you will need to either install it on your own machine (follow the setup guide specified in the [INSTALL.md](INSTALL.md) file) or download the pre-installed and ready-to-go [virtual machine](https://drive.google.com/file/d/1Lqx7kxWMlpRCY1b9slrH0mt_pVT9-p4f/view?usp=sharing).
 
 ## VM info: 
- * Google drive [link to VM](https://drive.google.com/file/d/1Lqx7kxWMlpRCY1b9slrH0mt_pVT9-p4f/view?usp=sharing) 
+ * Google drive [link to VM](https://drive.google.com/file/d/1Lqx7kxWMlpRCY1b9slrH0mt_pVT9-p4f/view?usp=sharing) (it is a ~7GB .zip file)
  * Login info for VM is; username: decp and password: decplive
  * The VM is configured to nat ports to the host and thus you can access the DeCP-Live web-interface by opening your favorite browser and navigate to http://localhost:9080
  * To use the search engine you will however need to log in and start it manually (see ~/README file in VM).
