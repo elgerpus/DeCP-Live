@@ -51,9 +51,11 @@ sudo yarn global add pm2
 sudo yum install httpd
 ```
 
-### Setup the Firewall to allow HTTP
+### Setup the Firewall to allow HTTP, Node and Spark (optional)
 ```
 sudo firewall-cmd --permanent --add-port=80/tcp
+sudo firewall-cmd --permanent --add-port=32000/tcp
+sudo firewall-cmd --permanent --add-port=4040/tcp
 ```
 
 ### Restart the Firewall
