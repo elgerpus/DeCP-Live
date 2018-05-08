@@ -1,6 +1,7 @@
 # DeCP-Live
 
 A web-interface for DeCP, a high-throughput CBIR system.
+
 [DeCP is also available open source](https://github.com/elgerpus/DeCP)
 
 ## Features
