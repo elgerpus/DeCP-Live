@@ -74,7 +74,7 @@ The other lines are absolute paths to the result images and the number of featur
 
 ## Publications 
 
-* Prototyping a Web-Scale Multimedia Retrieval Service Using Spark published in the procedings of the 1st International Conference on Content-Based Multimedia Indexing (CBMI), September, 2018. 
+* Prototyping a Web-Scale Multimedia Retrieval Service Using Spark, published in the procedings of the 1st International Conference on Content-Based Multimedia Indexing (CBMI), September, 2018. 
 
 ## License
 
